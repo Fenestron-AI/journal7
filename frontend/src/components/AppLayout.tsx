@@ -36,7 +36,7 @@ export default function AppLayout() {
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="light"
         trigger={null} width={220}
-        style={{ overflow: 'auto', height: '100vh', position: 'sticky', top: 0, left: 0, borderRight: '1px solid #f0f0f0' }}>
+        style={{ overflow: 'auto', height: '100vh', position: 'sticky', top: 0, left: 0 }}>
         <div onClick={() => setCollapsed(!collapsed)} style={{ padding: collapsed ? '12px 8px' : '16px', fontWeight: 700, fontSize: 18, color: '#1677ff', textAlign: 'center', cursor: 'pointer' }}>
           {collapsed ? 'j7' : 'journal7'}
         </div>
@@ -59,7 +59,7 @@ export default function AppLayout() {
           <Menu mode="inline" selectedKeys={[location.pathname]} items={menuItems} onClick={({ key }) => navigate(key)} />
         )}
       </Sider>
-      <Layout>
+      <Layout style={{ borderLeft: '1px solid #f0f0f0' }}>
         <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', height: 48, lineHeight: '48px' }}>
           <Tooltip title={collapsed ? 'Развернуть меню' : 'Свернуть меню'} mouseEnterDelay={1.0} trigger="hover">
             <Button type="text" icon={collapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
