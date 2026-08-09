@@ -1,25 +1,25 @@
 import { useState, useMemo } from 'react';
-import { Table, Button, Tag, Typography, Space, Popconfirm, message, Tooltip, Select } from 'antd';
-import { CaretRightOutlined, PauseOutlined, DeleteOutlined, CheckCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Typography, Space, Popconfirm, message, Tooltip, Collapse, Progress } from 'antd';
+import { CaretRightOutlined, PauseOutlined, DeleteOutlined, CheckCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, ClockCircleOutlined, DownloadOutlined, CloudDownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiApi, LegalDocumentResponse } from '../../api/ai';
 
 const statusConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
   ACTIVE: { color: 'green', icon: <CheckCircleOutlined />, label: 'Готов' },
   MISSING: { color: 'default', icon: <MinusCircleOutlined />, label: 'Нет файла' },
-  PROCESSING: { color: 'blue', icon: <ClockCircleOutlined />, label: 'Обработка' },
+  DOWNLOADING: { color: 'cyan', icon: <CloudDownloadOutlined />, label: 'Скачивание' },
+  DOWNLOADED: { color: 'geekblue', icon: <DownloadOutlined />, label: 'Скачан' },
+  PROCESSING: { color: 'blue', icon: <LoadingOutlined spin />, label: 'Обработка' },
   ERROR: { color: 'red', icon: <ExclamationCircleOutlined />, label: 'Ошибка' },
   SUPERSEDED: { color: 'orange', icon: <CheckCircleOutlined />, label: 'Старая ред.' },
 };
 
 export default function AiDocumentsPage() {
-  const [statusFilter, setStatusFilter] = useState<string | undefined>();
-  const [groupFilter, setGroupFilter] = useState<string | undefined>();
   const queryClient = useQueryClient();
 
   const { data: docs, isLoading } = useQuery({
-    queryKey: ['ai-docs', statusFilter],
-    queryFn: () => aiApi.listDocuments(statusFilter || undefined),
+    queryKey: ['ai-docs'],
+    queryFn: () => aiApi.listDocuments(),
     refetchInterval: 5000,
   });
 
@@ -34,42 +34,57 @@ export default function AiDocumentsPage() {
     onSuccess: () => { message.success('Остановлено'); queryClient.invalidateQueries({ queryKey: ['ai-docs'] }); },
   });
 
-  const deleteMut = useMutation({
-    mutationFn: aiApi.deleteDocument,
-    onSuccess: () => { message.success('Удалено'); queryClient.invalidateQueries({ queryKey: ['ai-docs'] }); },
+  const downloadAllMut = useMutation({
+    mutationFn: async () => {
+      await aiApi.downloadAll();
+      message.success('Загрузка запущена');
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['ai-docs'] }),
   });
 
-  const groups = useMemo(() => {
-    const g = new Set<string>();
-    docs?.forEach(d => { if (d.metadata?.group) g.add(d.metadata.group); });
-    return Array.from(g);
+  const grouped = useMemo(() => {
+    const g: Record<string, LegalDocumentResponse[]> = {};
+    (docs || []).forEach(d => {
+      const grp = d.metadata?.group || 'Прочее';
+      if (!g[grp]) g[grp] = [];
+      g[grp].push(d);
+    });
+    const order = ['Федеральные законы Российской Федерации', 'Постановления Правительства РФ', 'Документы Минэнерго', 'Документы ФАС и ФСТ', 'Архив', 'Прочее'];
+    const sorted: Record<string, LegalDocumentResponse[]> = {};
+    order.forEach(k => { if (g[k]) sorted[k] = g[k]; });
+    Object.keys(g).forEach(k => { if (!sorted[k]) sorted[k] = g[k]; });
+    return sorted;
   }, [docs]);
-
-  const filtered = useMemo(() => {
-    let result = docs || [];
-    if (groupFilter) result = result.filter(d => d.metadata?.group === groupFilter);
-    return result;
-  }, [docs, groupFilter]);
 
   const stats = useMemo(() => {
     const s: Record<string, number> = {};
-    filtered.forEach(d => { s[d.status] = (s[d.status] || 0) + 1; });
+    (docs || []).filter(d => d.canonical).forEach(d => { s[d.status] = (s[d.status] || 0) + 1; });
     return s;
-  }, [filtered]);
+  }, [docs]);
+
+  const progress = useMemo(() => {
+    const done = (stats.ACTIVE || 0) + (stats.DOWNLOADED || 0);
+    const inProgress = (stats.DOWNLOADING || 0) + (stats.PROCESSING || 0);
+    const total = (docs || []).filter(d => d.canonical).length;
+    return total > 0 ? Math.round(((done + inProgress * 0.5) / total) * 100) : 0;
+  }, [stats, docs]);
 
   const columns = [
     {
       title: 'Документ', dataIndex: 'title', ellipsis: true,
       render: (v: string, r: LegalDocumentResponse) => (
-        <span>
-          <span style={{ color: r.canonical ? '#1677ff' : '#999', fontWeight: r.canonical ? 500 : 400 }}>{v}</span>
+        <a onClick={() => {
+          const url = r.metadata?.url;
+          if (url) window.open(url, '_blank');
+        }} style={{ fontWeight: r.canonical ? 500 : 400 }}>
+          {v}
           {r.docNumber && <Tag style={{ marginLeft: 6 }}>{r.docNumber}</Tag>}
-        </span>
+        </a>
       ),
     },
     { title: 'Редакция', dataIndex: 'revision', width: 110, render: (v: string) => v || '—' },
     {
-      title: 'Статус', dataIndex: 'status', width: 120,
+      title: 'Статус', dataIndex: 'status', width: 130,
       render: (v: string) => {
         const cfg = statusConfig[v] || statusConfig.MISSING;
         return <Tag color={cfg.color} icon={cfg.icon}>{cfg.label}</Tag>;
@@ -77,23 +92,16 @@ export default function AiDocumentsPage() {
     },
     { title: 'Чанки', dataIndex: 'chunkCount', width: 70, align: 'center' as const },
     {
-      title: '', width: 100,
+      title: '', width: 60,
       render: (_: any, r: LegalDocumentResponse) => (
         <Space size={0}>
-          {r.filePath && r.status !== 'PROCESSING' && (
+          {r.status === 'DOWNLOADED' && (
             <Tooltip title="Обработать">
               <Button type="text" size="small" icon={<CaretRightOutlined />} onClick={() => startMut.mutate(r.id)} />
             </Tooltip>
           )}
-          {r.status === 'PROCESSING' && (
-            <Tooltip title="Остановить">
-              <Button type="text" size="small" icon={<PauseOutlined />} onClick={() => cancelMut.mutate(r.id)} danger />
-            </Tooltip>
-          )}
-          {!r.canonical && (
-            <Popconfirm title="Удалить?" onConfirm={() => deleteMut.mutate(r.id)}>
-              <Tooltip title="Удалить"><Button type="text" size="small" icon={<DeleteOutlined />} danger /></Tooltip>
-            </Popconfirm>
+          {r.status === 'DOWNLOADING' && (
+            <Tag color="cyan" style={{ margin: 0 }}>...</Tag>
           )}
         </Space>
       ),
@@ -102,27 +110,42 @@ export default function AiDocumentsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>Нормативно-правовая база</Typography.Title>
         <Space>
-          <Select placeholder="Группа" allowClear style={{ width: 220 }} value={groupFilter} onChange={setGroupFilter}
-            options={groups.map(g => ({ label: g, value: g }))} />
-          <Select placeholder="Статус" allowClear style={{ width: 150 }} value={statusFilter} onChange={setStatusFilter}
-            options={Object.entries(statusConfig).map(([k, v]) => ({ label: v.label, value: k }))} />
+          <Button type="primary" icon={<CloudDownloadOutlined />} loading={downloadAllMut.isPending}
+            onClick={() => downloadAllMut.mutate()}>
+            Скачать все ({stats.MISSING || 0})
+          </Button>
         </Space>
       </div>
+      <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
+        <a href="https://www.so-ups.ru/functioning/laws/" target="_blank" rel="noopener noreferrer">so-ups.ru/functioning/laws/</a>
+        {' | '}
+        {Object.entries(stats).map(([k, v]) => {
+          const cfg = statusConfig[k] || { color: 'default', label: k };
+          return <Tag key={k} color={cfg.color as any} style={{ cursor: 'pointer' }}>{cfg.label}: {v}</Tag>;
+        })}
+      </Typography.Paragraph>
+      <Progress percent={progress} size="small" style={{ marginBottom: 16 }}
+        format={() => `${progress}%`} />
 
-      <div style={{ marginBottom: 12, display: 'flex', gap: 16 }}>
-        {Object.entries(statusConfig).map(([k, v]) => (
-          <Typography.Text key={k} style={{ fontSize: 13, cursor: 'pointer', opacity: statusFilter && statusFilter !== k ? 0.5 : 1 }}
-            onClick={() => setStatusFilter(statusFilter === k ? undefined : k)}>
-            <Tag color={v.color} icon={v.icon}>{v.label}: {(stats as any)[k] || 0}</Tag>
-          </Typography.Text>
-        ))}
-      </div>
-
-      <Table columns={columns} dataSource={filtered} loading={isLoading} rowKey="id" size="middle"
-        pagination={false} scroll={{ y: 'calc(100vh - 300px)' }} />
+      <Collapse defaultActiveKey={Object.keys(grouped)} size="small" style={{ background: '#fff' }}
+        items={Object.entries(grouped).map(([group, items]) => ({
+          key: group,
+          label: (
+            <Space>
+              <Typography.Text strong>{group}</Typography.Text>
+              <Typography.Text type="secondary">({items.length})</Typography.Text>
+              {items.filter(d => d.status === 'ACTIVE').length > 0 && <Tag color="green">✓ {items.filter(d => d.status === 'ACTIVE').length}</Tag>}
+              {items.filter(d => d.status === 'DOWNLOADING').length > 0 && <Tag color="cyan">↓ {items.filter(d => d.status === 'DOWNLOADING').length}</Tag>}
+            </Space>
+          ),
+          children: (
+            <Table columns={columns} dataSource={items} rowKey="id" size="small" pagination={false}
+              loading={isLoading} showHeader={false} />
+          ),
+        }))} />
     </div>
   );
 }

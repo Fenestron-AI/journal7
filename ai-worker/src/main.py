@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from config import settings
 from db import delete_chunks, get_document, insert_chunks, set_document_status, store_embedding
+from downloader import download_all
 from ingestion import chunk_text, extract_text
 from qa import ask
 from yandex import embed
@@ -103,6 +104,30 @@ async def ingest(req: IngestRequest):
     except Exception as e:
         logger.exception("Ingest failed")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/download")
+async def download_docs():
+    """Download all MISSING canonical documents from so-ups.ru."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, download_all)
+
+
+@app.get("/download/progress")
+async def download_progress():
+    """Get download/processing progress."""
+    import psycopg2
+    from config import settings
+    conn = psycopg2.connect(settings.database_url)
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT status, count(*) FROM ai.documents WHERE canonical = TRUE GROUP BY status ORDER BY status"
+    )
+    statuses = {r[0]: r[1] for r in cur.fetchall()}
+    cur.close()
+    conn.close()
+    return {"total": 74, "statuses": statuses}
 
 
 @app.post("/ask")

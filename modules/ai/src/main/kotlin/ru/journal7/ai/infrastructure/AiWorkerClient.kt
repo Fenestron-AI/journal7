@@ -80,4 +80,11 @@ class AiWorkerClient(
             false
         }
     }
+
+    suspend fun downloadAll(): Boolean {
+        return try {
+            val resp = client.post("$baseUrl/download")
+            resp.status.isSuccess()
+        } catch (_: Exception) { false }
+    }
 }

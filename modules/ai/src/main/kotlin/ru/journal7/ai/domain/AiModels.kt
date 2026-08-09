@@ -5,7 +5,7 @@ import kotlinx.serialization.Contextual
 import ru.journal7.core.types.UuidEntity
 import java.util.UUID
 
-enum class DocumentStatus { MISSING, ACTIVE, SUPERSEDED, PROCESSING, ERROR }
+enum class DocumentStatus { MISSING, DOWNLOADING, DOWNLOADED, PROCESSING, ACTIVE, SUPERSEDED, ERROR }
 
 @Serializable
 data class LegalDocument(

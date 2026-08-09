@@ -122,8 +122,8 @@ private fun Application.configureKoin(config: AppConfig) {
         // AI
         single<AiRepository> { PostgresAiRepository() }
         single<AiWorkerClient> { AiWorkerClient(config.ai.workerUrl) }
-        single<AiService> { AiService(get(), get()) }
-        single<DocumentWatcher> { DocumentWatcher(get(), get(), config.ai.watchDir) }
+        single { AiService(get(), get()) }
+        single { DocumentWatcher(get(), get(), config.ai.watchDir) }
     }
 
     install(Koin) {

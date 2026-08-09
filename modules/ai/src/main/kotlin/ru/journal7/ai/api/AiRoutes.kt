@@ -16,8 +16,14 @@ import java.util.UUID
 fun Route.aiRoutes() {
     val aiService by inject<AiService>()
     val watcher by inject<DocumentWatcher>()
+    val workerClient by inject<ru.journal7.ai.infrastructure.AiWorkerClient>()
 
     route("/api/v1/ai") {
+        // --- Download ---
+        post("download") {
+            val ok = workerClient.downloadAll()
+            call.respond(mapOf("started" to ok))
+        }
         // --- Documents ---
         get("documents") {
             val status = call.request.queryParameters["status"]

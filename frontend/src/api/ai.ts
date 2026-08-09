@@ -46,6 +46,8 @@ export const aiApi = {
     api.post(`/ai/documents/${id}/ingest`).then(r => r.data),
   cancelIngest: (id: string) =>
     api.post(`/ai/documents/${id}/cancel`).then(r => r.data),
+  downloadAll: () =>
+    api.post('/ai/download').then(r => r.data),
   refresh: () =>
     api.post('/ai/documents/refresh').then(r => r.data),
   ask: (question: string, messages: { role: string; content: string }[] = []) =>

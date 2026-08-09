@@ -40,10 +40,8 @@ CREATE TABLE ai.chunks (
     UNIQUE (document_id, chunk_index)
 );
 
--- HNSW index: fast ANN search (better than ivfflat for correctness)
-CREATE INDEX idx_ai_chunks_embedding ON ai.chunks
-    USING hnsw (embedding vector_cosine_ops)
-    WITH (m = 16, ef_construction = 64);
+-- HNSW index will be created in V4 after seed data
+-- CREATE INDEX idx_ai_chunks_embedding ON ai.chunks ...
 
 -- ============================================================
 -- Notifications (уведомления о новых редакциях)
