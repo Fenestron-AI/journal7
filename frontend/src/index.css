@@ -65,7 +65,7 @@ body {
   margin: 0;
 }
 
-aside.ant-layout-sider {
+[class*="ant-layout-sider"] {
   border-inline-end: none !important;
   border-right: none !important;
 }
