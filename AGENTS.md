@@ -275,6 +275,6 @@ In Omega, to create a contract you had to: open counterparty form → save → o
 - [x] Billing module (invoices, acceptance acts, auto-generate from calc)
 - [x] Reporting module (Excel export with Apache POI)
 - [x] Integration module (file import, 1C export stub)
-- [ ] Frontend (React + TypeScript)
+- [x] Frontend (React 19 + Ant Design + Zustand + React Query)
 - [ ] Tests
 - [ ] CI/CD (GitHub Actions)
