@@ -14,6 +14,10 @@ import ru.journal7.auth.application.AuthService
 import ru.journal7.auth.domain.SecurityConfig
 import ru.journal7.auth.domain.UserRepository
 import ru.journal7.auth.infrastructure.PostgresUserRepository
+import ru.journal7.contract.api.contractRoutes
+import ru.journal7.contract.application.ContractService
+import ru.journal7.contract.domain.SaleContractRepository
+import ru.journal7.contract.infrastructure.PostgresSaleContractRepository
 import ru.journal7.plugins.*
 import ru.journal7.reference.api.powerProfileRoutes
 import ru.journal7.reference.api.referenceRoutes
@@ -48,6 +52,7 @@ fun main() {
             authRoutes()
             referenceRoutes()
             powerProfileRoutes()
+            contractRoutes()
         }
     }.start(wait = true)
 }
@@ -77,6 +82,10 @@ private fun Application.configureKoin(config: AppConfig) {
         single { CounterpartyService(get()) }
         single<PowerProfileRepository> { PostgresPowerProfileRepository() }
         single { PowerProfileService(get()) }
+
+        // Contract
+        single<SaleContractRepository> { PostgresSaleContractRepository() }
+        single { ContractService(get(), get()) }
     }
 
     install(Koin) {

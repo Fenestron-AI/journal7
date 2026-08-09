@@ -12,5 +12,5 @@ sealed class DomainError(
     open class Unauthorized(message: String) : DomainError(message, "UNAUTHORIZED")
     open class Internal(message: String, val originalError: Throwable? = null) : DomainError(message, "INTERNAL_ERROR")
     class Calculation(message: String, val details: Map<String, Any>? = null) : DomainError(message, "CALCULATION_ERROR")
-    class ClosedPeriod(message: String) : DomainError(message, "CLOSED_PERIOD")
+    open class ClosedPeriod(message: String) : DomainError(message, "CLOSED_PERIOD")
 }
