@@ -23,7 +23,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider locale={ruRU} theme={{ algorithm: theme.defaultAlgorithm, token: { colorPrimary: '#1677ff' } }}>
+      <ConfigProvider locale={ruRU} theme={{ algorithm: theme.defaultAlgorithm, token: { colorPrimary: '#1677ff' } }}
+        tooltip={{ mouseEnterDelay: 1, trigger: 'hover' }}>
         <AntApp>
           <BrowserRouter>
             <Routes>
