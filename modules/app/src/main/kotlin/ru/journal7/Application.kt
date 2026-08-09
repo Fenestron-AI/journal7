@@ -15,6 +15,14 @@ import ru.journal7.auth.domain.SecurityConfig
 import ru.journal7.auth.domain.UserRepository
 import ru.journal7.auth.infrastructure.PostgresUserRepository
 import ru.journal7.plugins.*
+import ru.journal7.reference.api.powerProfileRoutes
+import ru.journal7.reference.api.referenceRoutes
+import ru.journal7.reference.application.CounterpartyService
+import ru.journal7.reference.application.PowerProfileService
+import ru.journal7.reference.domain.CounterpartyRepository
+import ru.journal7.reference.domain.PowerProfileRepository
+import ru.journal7.reference.infrastructure.PostgresCounterpartyRepository
+import ru.journal7.reference.infrastructure.PostgresPowerProfileRepository
 
 fun main() {
     val config = loadConfig()
@@ -38,6 +46,8 @@ fun main() {
                 )
             }
             authRoutes()
+            referenceRoutes()
+            powerProfileRoutes()
         }
     }.start(wait = true)
 }
@@ -58,8 +68,15 @@ private fun Application.configureKoin(config: AppConfig) {
             )
         }
 
+        // Auth
         single<UserRepository> { PostgresUserRepository() }
         single { AuthService(get(), get()) }
+
+        // Reference
+        single<CounterpartyRepository> { PostgresCounterpartyRepository() }
+        single { CounterpartyService(get()) }
+        single<PowerProfileRepository> { PostgresPowerProfileRepository() }
+        single { PowerProfileService(get()) }
     }
 
     install(Koin) {
