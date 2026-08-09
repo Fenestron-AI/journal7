@@ -10,6 +10,8 @@ import ContractsPage from './pages/contracts/ContractsPage';
 import PowerProfilesPage from './pages/power-profiles/PowerProfilesPage';
 import CalculationsPage from './pages/calculations/CalculationsPage';
 import InvoicesPage from './pages/invoices/InvoicesPage';
+import AiChatPage from './pages/ai/AiChatPage';
+import AiDocumentsPage from './pages/ai/AiDocumentsPage';
 import { useAuthStore } from './stores/authStore';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } });
@@ -36,6 +38,8 @@ export default function App() {
                 <Route path="power-profiles" element={<PowerProfilesPage />} />
                 <Route path="calculations" element={<CalculationsPage />} />
                 <Route path="invoices" element={<InvoicesPage />} />
+                <Route path="ai" element={<AiChatPage />} />
+                <Route path="ai/documents" element={<AiDocumentsPage />} />
               </Route>
             </Routes>
           </BrowserRouter>

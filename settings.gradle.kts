@@ -9,6 +9,7 @@ include(
     ":billing",
     ":reporting",
     ":integration",
+    ":ai",
     ":app"
 )
 
@@ -20,6 +21,7 @@ project(":calculation").projectDir = file("modules/calculation")
 project(":billing").projectDir = file("modules/billing")
 project(":reporting").projectDir = file("modules/reporting")
 project(":integration").projectDir = file("modules/integration")
+project(":ai").projectDir = file("modules/ai")
 project(":app").projectDir = file("modules/app")
 
 dependencyResolutionManagement {

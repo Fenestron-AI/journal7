@@ -28,3 +28,7 @@ jwt:
 
 cors:
   origins: "http://localhost:5173"
+
+ai:
+  workerUrl: "http://localhost:8000"
+  watchDir: "/home/fenestron/Developer/journal7/data/legal-docs/current"

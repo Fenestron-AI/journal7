@@ -47,3 +47,6 @@ frontend/.env
 
 # Local data (PostgreSQL, logs)
 data/
+ai-worker/venv/
+**/__pycache__/
+ai-worker/.env

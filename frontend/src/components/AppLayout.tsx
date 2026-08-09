@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Button, Typography, Tooltip } from 'antd';
-import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined } from '@ant-design/icons';
+import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined, RobotOutlined, BookOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { useEffect, useState } from 'react';
 
@@ -22,6 +22,8 @@ const menuItems = [
   { key: '/power-profiles', icon: <ThunderboltOutlined />, label: 'Профили мощности' },
   { key: '/calculations', icon: <CalculatorOutlined />, label: 'Расчёты' },
   { key: '/invoices', icon: <FilePdfOutlined />, label: 'Счета' },
+  { key: '/ai', icon: <RobotOutlined />, label: 'AI-агент' },
+  { key: '/ai/documents', icon: <BookOutlined />, label: 'Нормативная база' },
 ];
 
 export default function AppLayout() {

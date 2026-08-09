@@ -1,0 +1,26 @@
+[project]
+name = "journal7-ai-worker"
+version = "0.1.0"
+description = "AI worker for journal7: legal document ingestion + RAG Q&A (Yandex Cloud)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "httpx>=0.27",
+    "psycopg2-binary>=2.9",
+    "python-multipart>=0.0.9",
+]
+
+[project.optional-dependencies]
+# For document parsing (RTF/DOCX/PDF)
+docs = [
+    "striprtf>=0.0.26",
+    "python-docx>=1.1",
+    "pypdf>=4.0",
+    "beautifulsoup4>=4.12",
+]
+
+[tool.uv]
+package = false

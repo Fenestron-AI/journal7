@@ -25,6 +25,7 @@ dependencies {
     implementation(project(":billing"))
     implementation(project(":reporting"))
     implementation(project(":integration"))
+    implementation(project(":ai"))
 
     implementation(project.libs.ktor.server.core)
     implementation(project.libs.ktor.server.netty)

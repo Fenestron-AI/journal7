@@ -8,6 +8,12 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
+import ru.journal7.ai.api.aiRoutes
+import ru.journal7.ai.application.AiService
+import ru.journal7.ai.application.DocumentWatcher
+import ru.journal7.ai.domain.AiRepository
+import ru.journal7.ai.infrastructure.AiWorkerClient
+import ru.journal7.ai.infrastructure.PostgresAiRepository
 import ru.journal7.auth.api.authRoutes
 import ru.journal7.auth.api.configureAuthPlugin
 import ru.journal7.auth.application.AuthService
@@ -71,6 +77,7 @@ fun main() {
             billingRoutes()
             reportingRoutes()
             integrationRoutes()
+            aiRoutes()
         }
     }.start(wait = true)
 }
@@ -111,6 +118,12 @@ private fun Application.configureKoin(config: AppConfig) {
 
         single { ExcelReportService() }
         single { ImportService(get(), get()) }
+
+        // AI
+        single<AiRepository> { PostgresAiRepository() }
+        single<AiWorkerClient> { AiWorkerClient(config.ai.workerUrl) }
+        single<AiService> { AiService(get(), get()) }
+        single<DocumentWatcher> { DocumentWatcher(get(), get(), config.ai.watchDir) }
     }
 
     install(Koin) {

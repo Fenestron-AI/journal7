@@ -11,7 +11,8 @@ data class AppConfig(
     val redis: RedisConfig,
     val minio: MinioConfig,
     val jwt: JwtConfig,
-    val cors: CorsConfig
+    val cors: CorsConfig,
+    val ai: AiConfig
 )
 
 data class ServerConfig(
@@ -55,6 +56,11 @@ data class CorsConfig(
 ) {
     val allowedOrigins: List<String> get() = origins.split(",").map { it.trim() }
 }
+
+data class AiConfig(
+    val workerUrl: String = "http://localhost:8000",
+    val watchDir: String = "data/legal-docs/current"
+)
 
 fun loadConfig(env: String = "dev"): AppConfig {
     val loader = ConfigLoaderBuilder.default()
