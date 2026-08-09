@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { counterpartyApi, CounterpartyResponse } from '../../api/endpoints';
 import SmartFilterBar, { FilterField } from '../../components/SmartFilterBar';
 import ObjectPage from '../../components/ObjectPage';
-import Breadcrumbs from '../../components/Breadcrumbs';
 
 const FILTER_FIELDS: FilterField[] = [
   { key: 'q', label: 'Поиск', type: 'text' },
@@ -59,7 +58,6 @@ export default function CounterpartiesPage() {
 
   return (
     <div>
-      <Breadcrumbs items={[{ title: 'Контрагенты' }]} />
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>Контрагенты</Typography.Title>
         <Space>

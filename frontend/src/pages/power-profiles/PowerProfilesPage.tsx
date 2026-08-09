@@ -3,7 +3,6 @@ import { Table, Button, Space, Modal, Form, Input, message, Typography, Tag, Sel
 import { PlusOutlined, ReloadOutlined, HeatMapOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { powerProfileApi, PowerProfileResponse, HeatmapItem } from '../../api/endpoints';
-import Breadcrumbs from '../../components/Breadcrumbs';
 import dayjs from 'dayjs';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -84,7 +83,6 @@ export default function PowerProfilesPage() {
 
   return (
     <div>
-      <Breadcrumbs items={[{ title: 'Профили мощности' }]} />
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>Профили мощности</Typography.Title>
         <Space>

@@ -4,7 +4,6 @@ import { PlusOutlined, ApartmentOutlined, ReloadOutlined } from '@ant-design/ico
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contractApi, counterpartyApi, SaleContractResponse } from '../../api/endpoints';
 import ObjectPage from '../../components/ObjectPage';
-import Breadcrumbs from '../../components/Breadcrumbs';
 
 export default function ContractsPage() {
   const [search, setSearch] = useState('');
@@ -77,7 +76,6 @@ export default function ContractsPage() {
 
   return (
     <div>
-      <Breadcrumbs items={[{ title: 'Договоры' }]} />
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>Договоры продажи</Typography.Title>
         <Space>
