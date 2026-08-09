@@ -22,7 +22,7 @@ async function fetchStats() {
 const sections = [
   { key: '/counterparties', title: 'Контрагенты', icon: <TeamOutlined />, color: '#1677ff', bg: '#e6f4ff', stat: 'counterparties' },
   { key: '/contracts', title: 'Договоры', icon: <FileTextOutlined />, color: '#52c41a', bg: '#f6ffed', stat: 'contracts' },
-  { key: '/power-profiles', title: 'Профили мощности', icon: <ThunderboltOutlined />, color: '#fa8c16', bg: '#fff7e6', stat: 'profiles' },
+  { key: '/power-profiles', title: 'Профили', icon: <ThunderboltOutlined />, color: '#fa8c16', bg: '#fff7e6', stat: 'profiles' },
   { key: '/calculations', title: 'Расчёты', icon: <CalculatorOutlined />, color: '#722ed1', bg: '#f9f0ff', stat: 'calculations' },
   { key: '/invoices', title: 'Счета', icon: <FilePdfOutlined />, color: '#eb2f96', bg: '#fff0f6', stat: 'invoices' },
 ];
@@ -38,9 +38,9 @@ export default function DashboardPage() {
       <Typography.Title level={4} style={{ marginBottom: 24 }}>Дашборд</Typography.Title>
       <Row gutter={[16, 16]}>
         {sections.map((s) => (
-          <Col xs={24} sm={12} lg={8} xl={4} key={s.key}>
+          <Col xs={24} sm={12} md={8} lg={4} xl={4} key={s.key}>
             <Card hoverable onClick={() => navigate(s.key)}
-              style={{ borderTop: `3px solid ${s.color}`, cursor: 'pointer' }}>
+              style={{ borderTop: `3px solid ${s.color}`, cursor: 'pointer', height: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ width: 40, height: 40, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: s.color }}>
                   {s.icon}
