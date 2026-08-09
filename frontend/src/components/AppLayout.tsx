@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Button, Typography, Tooltip } from 'antd';
-import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { useEffect, useState } from 'react';
 
@@ -50,9 +50,9 @@ export default function AppLayout() {
       <Layout>
         <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', height: 48, lineHeight: '48px' }}>
           <Tooltip title={collapsed ? 'Развернуть меню' : 'Свернуть меню'}>
-            <Button type="text" icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            <Button type="text" icon={collapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
               onClick={() => setCollapsed(!collapsed)}
-              style={{ fontSize: 16, width: 40, height: 40 }} />
+              style={{ fontSize: 14, width: 40, height: 40 }} />
           </Tooltip>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Typography.Text>{user?.fullName}</Typography.Text>
