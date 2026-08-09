@@ -45,7 +45,14 @@ export default function AppLayout() {
         <div style={{ padding: collapsed ? '16px 8px' : '16px', fontWeight: 700, fontSize: 18, color: '#1677ff', textAlign: 'center' }}>
           {collapsed ? 'j7' : 'journal7'}
         </div>
-        <Menu mode="inline" selectedKeys={[location.pathname]} items={menuItems} onClick={({ key }) => navigate(key)} />
+        <Menu mode="inline" selectedKeys={[location.pathname]}
+          items={menuItems.map(item => ({
+            ...item,
+            label: collapsed ? (
+              <Tooltip title={item.label} placement="right" mouseEnterDelay={1} trigger="hover">{item.label}</Tooltip>
+            ) : item.label
+          }))}
+          onClick={({ key }) => navigate(key)} />
       </Sider>
       <Layout>
         <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', height: 48, lineHeight: '48px' }}>
