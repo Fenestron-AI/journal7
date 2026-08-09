@@ -95,56 +95,74 @@ def _parse_page(cur) -> list[dict]:
         if not group:
             continue
 
-        # Extract document links from this section
-        for m in re.finditer(
-            r'<a[^>]*href="(fileadmin/files/laws/[^"]*\.pdf|/fileadmin/files/laws/[^"]*\.pdf)"[^>]*>(.*?)</a>',
+        # Extract document links + descriptions from this section
+        # Structure: <li class="download pdf"> <a href="...">label</a> <div class="info">description</div> <span>size</span> </li>
+        for li_match in re.finditer(
+            r'<li[^>]*class="download pdf[^"]*"[^>]*>(.*?)</li>',
             section if isinstance(section, str) else "",
             re.DOTALL
         ):
-            url = urljoin(BASE, m.group(1))
-            title_html = m.group(2)
-            title_clean = re.sub(r'<[^>]+>', '', title_html).strip()
-            filename = os.path.basename(m.group(1))
-
-            # Try to extract number + date + revision from surrounding context
-            pos = m.start()
-            ctx_start = max(0, pos - 500)
-            ctx_end = min(len(html), pos + 2000)
-            ctx = html[ctx_start:ctx_end]
-
-            doc_number = None
-            nm = re.search(r'[N№]\s*(\d+(?:[-/]\S+)?)', title_clean + ' ' + group, re.IGNORECASE)
-            if nm:
-                doc_number = nm.group(1)
-
-            doc_date = None
-            dm = re.search(r'от\s+(\d{2}\.\d{2}\.\d{4})', title_clean)
-            if dm:
-                doc_date = dm.group(1)
-
-            revision = None
-            rm = re.search(r'ред[а-я]*[.:]\s*от\s+(\d{2}\.\d{2}\.\d{4})', ctx, re.IGNORECASE)
-            if rm:
-                revision = rm.group(1)
-            # Also check "В редакции от" pattern
-            if not revision:
-                rm2 = re.search(r'д[её]йствует\s+с\s+\d{2}\.\d{2}\.\d{4}', ctx, re.IGNORECASE)
-                if not rm2:
-                    rm2 = re.search(r'\(в\s+редакции\s+от\s+(\d{2}\.\d{2}\.\d{4})\)', ctx, re.IGNORECASE)
-                    if rm2:
-                        revision = rm2.group(1)
-
-            # Size
+            li_html = li_match.group(1)
+            
+            # Extract <a> link
+            a_match = re.search(r'<a[^>]*href="([^"]*\.pdf)"[^>]*>(.*?)</a>', li_html, re.DOTALL)
+            if not a_match:
+                continue
+            
+            url = urljoin(BASE, a_match.group(1))
+            label = re.sub(r'<[^>]+>', '', a_match.group(2)).strip()
+            filename = os.path.basename(a_match.group(1))
+            
+            # Extract <div class="info"> description
+            info_match = re.search(r'<div class="info">(.*?)</div>', li_html, re.DOTALL)
+            description = re.sub(r'<[^>]+>', '', info_match.group(1)).strip() if info_match else ""
+            
+            # Extract <span> size
+            span_match = re.search(r'<span>(\d+\s*[кМ]Б)</span>', li_html)
+            size_str = span_match.group(1) if span_match else ""
+            
+            # Build full title
+            if label and description:
+                title_clean = f"{label} — {description}"
+            elif label:
+                title_clean = label
+            elif description:
+                title_clean = description
+            else:
+                title_clean = filename
+            
+            # Parse size
             size_kb = 0
-            sm = re.search(r'(\d+)\s*кБ', ctx)
+            sm = re.search(r'(\d+)\s*кБ', size_str)
             if sm:
                 size_kb = int(sm.group(1))
-            else:
-                sm = re.search(r'(\d+)\s*МБ', ctx)
-                if sm:
-                    size_kb = int(sm.group(1)) * 1024
-
-            # Doc type
+            sm = re.search(r'(\d+)\s*МБ', size_str)
+            if sm:
+                size_kb = int(sm.group(1)) * 1024
+            
+            # Number
+            doc_number = None
+            nm = re.search(r'[N№]\s*(\d+(?:[-/]\S+)?)', label + ' ' + description, re.IGNORECASE)
+            if nm:
+                doc_number = nm.group(1)
+            
+            # Date from label: "от ДД.ММ.ГГГГ"
+            doc_date = None
+            dm = re.search(r'от\s+(\d{2}\.\d{2}\.\d{4})', label)
+            if dm:
+                doc_date = dm.group(1)
+            
+            # Revision: from description or label
+            revision = None
+            rm = re.search(r'ред[а-я]*[.:]\s*от\s+(\d{2}\.\d{2}\.\d{4})', description, re.IGNORECASE)
+            if rm:
+                revision = rm.group(1)
+            if not revision and 'В редакции от' in description:
+                rm2 = re.search(r'В\s+редакции\s+от\s+(\d{2}\.\d{2}\.\d{4})', description, re.IGNORECASE)
+                if rm2:
+                    revision = rm2.group(1)
+            
+            # Doc type from group name
             if "едераль" in group:
                 doc_type = "ФЗ"
             elif "инэнерго" in group.lower():
@@ -153,9 +171,9 @@ def _parse_page(cur) -> list[dict]:
                 doc_type = "Приказ ФАС/ФСТ"
             else:
                 doc_type = "ПП РФ"
-
+            
             priority = bool(doc_number and doc_number in ["442", "1178", "861", "1172", "24", "35-ФЗ", "135-ФЗ"])
-
+            
             sort_order += 1
             docs.append({
                 "group": group.strip(),
@@ -209,7 +227,7 @@ def _sync_documents(cur, documents: list[dict]) -> dict:
                 WHERE id = %s""",
                 (doc["title"], doc["revision"], doc["doc_date"], doc["doc_type"],
                  doc["sort_order"], doc["url"], doc["filename"],
-                 json.dumps({"group": doc["group"], "priority": "high" if doc["priority"] else "normal"}, ensure_ascii=False),
+                 json.dumps({"group": doc["group"], "priority": "high" if doc["priority"] else "normal", "size_kb": doc["size_kb"]}, ensure_ascii=False),
                  int(time.time() * 1000),
                  existing[0]),
             )
@@ -223,11 +241,11 @@ def _sync_documents(cur, documents: list[dict]) -> dict:
                  metadata, created_at, updated_at, last_checked_at)
                 VALUES (gen_random_uuid(), %s, %s, %s, %s, %s, 'MISSING',
                  'so-ups.ru', %s, %s, TRUE, %s,
-                 %s, %s, %s, %s)""",
+                 %s,                  %s, %s, %s)""",
                 (doc["title"], doc["doc_number"], doc["doc_date"], doc["revision"],
                  doc["doc_type"], doc["url"], doc["filename"],
                  doc["sort_order"],
-                 json.dumps({"group": doc["group"], "priority": "high" if doc["priority"] else "normal"}, ensure_ascii=False),
+                 json.dumps({"group": doc["group"], "priority": "high" if doc["priority"] else "normal", "size_kb": doc["size_kb"]}, ensure_ascii=False),
                  int(time.time() * 1000), int(time.time() * 1000),
                  int(time.time() * 1000)),
             )
