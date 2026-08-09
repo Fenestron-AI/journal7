@@ -2,9 +2,8 @@ package ru.journal7
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.addEnvironmentSource
-import com.sksamuel.hoplite.addFileSource
+import com.sksamuel.hoplite.addResourceSource
 import com.sksamuel.hoplite.fp.Validated
-import java.nio.file.Paths
 
 data class AppConfig(
     val server: ServerConfig,
@@ -59,14 +58,14 @@ data class CorsConfig(
 
 fun loadConfig(env: String = "dev"): AppConfig {
     val loader = ConfigLoaderBuilder.default()
-        .addFileSource(Paths.get(".env").toString(), optional = true)
+        .addResourceSource("/application-$env.yaml")
         .addEnvironmentSource()
         .build()
 
     return when (val result = loader.loadConfig<AppConfig>()) {
         is Validated.Valid -> result.value
         is Validated.Invalid -> throw IllegalStateException(
-            "Config loading failed: $result"
+            "Config loading failed: ${result}"
         )
     }
 }

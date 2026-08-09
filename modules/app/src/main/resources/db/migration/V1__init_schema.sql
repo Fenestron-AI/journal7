@@ -5,6 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================
 -- Schema: settings (Настройки)
+-- Note: all timestamps use BIGINT (epoch millis), dates use VARCHAR(10)
 -- ============================================================
 CREATE SCHEMA IF NOT EXISTS settings;
 
@@ -16,9 +17,9 @@ CREATE TABLE settings.users (
     email       VARCHAR(256),
     role        VARCHAR(32) NOT NULL DEFAULT 'viewer',
     deleted     BOOLEAN NOT NULL DEFAULT FALSE,
-    deleted_at  TIMESTAMPTZ,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    deleted_at  BIGINT,
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE settings.user_profiles (
@@ -36,8 +37,8 @@ CREATE TABLE settings.user_profiles (
     email_password VARCHAR(256),
     email_ssl   BOOLEAN DEFAULT TRUE,
     is_default  BOOLEAN DEFAULT FALSE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE settings.firm_profiles (
@@ -54,8 +55,8 @@ CREATE TABLE settings.firm_profiles (
     stamp_path      VARCHAR(512),
     signature_path  VARCHAR(512),
     logo_path       VARCHAR(512),
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 -- ============================================================
@@ -81,9 +82,9 @@ CREATE TABLE directory.counterparties (
     bank_rs         VARCHAR(20),
     type            VARCHAR(32) NOT NULL DEFAULT 'sale',
     deleted         BOOLEAN NOT NULL DEFAULT FALSE,
-    deleted_at      TIMESTAMPTZ,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    deleted_at      BIGINT,
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE directory.regions (
@@ -91,9 +92,9 @@ CREATE TABLE directory.regions (
     code        VARCHAR(16) NOT NULL UNIQUE,
     name        VARCHAR(256) NOT NULL,
     timezone    VARCHAR(64),
-    tariffs     JSONB DEFAULT '[]',
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    tariffs     TEXT DEFAULT '[]',
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE directory.guaranteeing_suppliers (
@@ -101,16 +102,16 @@ CREATE TABLE directory.guaranteeing_suppliers (
     code        VARCHAR(16) NOT NULL UNIQUE,
     name        VARCHAR(512) NOT NULL,
     region_id   UUID REFERENCES directory.regions(id),
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE directory.calculation_groups (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        VARCHAR(256) NOT NULL,
     description TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE directory.tariff_zones (
@@ -118,8 +119,8 @@ CREATE TABLE directory.tariff_zones (
     name        VARCHAR(256) NOT NULL,
     code        VARCHAR(32) NOT NULL,
     description TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE directory.power_profiles (
@@ -128,9 +129,9 @@ CREATE TABLE directory.power_profiles (
     name        VARCHAR(512) NOT NULL,
     type        VARCHAR(32) NOT NULL DEFAULT 'consumption',
     region_id   UUID REFERENCES directory.regions(id),
-    data        JSONB DEFAULT '[]',
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    data        TEXT DEFAULT '[]',
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE directory.responsible_persons (
@@ -139,8 +140,8 @@ CREATE TABLE directory.responsible_persons (
     position    VARCHAR(256),
     phone       VARCHAR(32),
     email       VARCHAR(256),
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE directory.discount_formulas (
@@ -148,8 +149,8 @@ CREATE TABLE directory.discount_formulas (
     name        VARCHAR(256) NOT NULL,
     formula     TEXT NOT NULL,
     description TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 -- ============================================================
@@ -161,19 +162,19 @@ CREATE TABLE document.sale_contracts (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     number              VARCHAR(128) NOT NULL,
     counterparty_id     UUID NOT NULL REFERENCES directory.counterparties(id),
-    date_from           DATE NOT NULL,
+    date_from           VARCHAR(10) NOT NULL,
     date_to             DATE,
     type                VARCHAR(32) NOT NULL DEFAULT 'energy_sale',
     price_category      VARCHAR(16) NOT NULL DEFAULT 'CK1',
     calculation_group_id UUID REFERENCES directory.calculation_groups(id),
     confirmed_by        UUID REFERENCES settings.users(id),
     confirmed           BOOLEAN NOT NULL DEFAULT FALSE,
-    confirmed_at        TIMESTAMPTZ,
-    metadata            JSONB DEFAULT '{}',
+    confirmed_at        BIGINT,
+    metadata            TEXT DEFAULT '{}',
     deleted             BOOLEAN NOT NULL DEFAULT FALSE,
-    deleted_at          TIMESTAMPTZ,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+    deleted_at          BIGINT,
+    created_at          BIGINT NOT NULL DEFAULT 0,
+    updated_at          BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.accounting_objects (
@@ -182,9 +183,9 @@ CREATE TABLE document.accounting_objects (
     name            VARCHAR(512) NOT NULL,
     code            VARCHAR(128),
     deleted         BOOLEAN NOT NULL DEFAULT FALSE,
-    deleted_at      TIMESTAMPTZ,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    deleted_at      BIGINT,
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.delivery_points (
@@ -193,26 +194,26 @@ CREATE TABLE document.delivery_points (
     contract_id     UUID NOT NULL REFERENCES document.sale_contracts(id),
     name            VARCHAR(512) NOT NULL,
     code            VARCHAR(128),
-    metering_points JSONB DEFAULT '[]',
+    metering_points TEXT DEFAULT '[]',
     deleted         BOOLEAN NOT NULL DEFAULT FALSE,
-    deleted_at      TIMESTAMPTZ,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    deleted_at      BIGINT,
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.sale_calculations (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     contract_id     UUID NOT NULL REFERENCES document.sale_contracts(id),
-    period_from     DATE NOT NULL,
-    period_to       DATE NOT NULL,
+    period_from     VARCHAR(10) NOT NULL,
+    period_to       VARCHAR(10) NOT NULL,
     price_category  VARCHAR(16) NOT NULL,
     status          VARCHAR(32) NOT NULL DEFAULT 'draft',
     total_volume    NUMERIC(18, 6) DEFAULT 0,
     total_cost      NUMERIC(18, 2) DEFAULT 0,
-    result_data     JSONB DEFAULT '{}',
+    result_data     TEXT DEFAULT '{}',
     created_by      UUID REFERENCES settings.users(id),
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.sale_invoices (
@@ -220,16 +221,16 @@ CREATE TABLE document.sale_invoices (
     contract_id     UUID NOT NULL REFERENCES document.sale_contracts(id),
     calculation_id  UUID REFERENCES document.sale_calculations(id),
     number          VARCHAR(128) NOT NULL,
-    date            DATE NOT NULL,
+    date            VARCHAR(10) NOT NULL,
     type            VARCHAR(32) NOT NULL DEFAULT 'realization',
-    items           JSONB DEFAULT '[]',
+    items           TEXT DEFAULT '[]',
     total_amount    NUMERIC(18, 2) DEFAULT 0,
     total_vat       NUMERIC(18, 2) DEFAULT 0,
     total_with_vat  NUMERIC(18, 2) DEFAULT 0,
     status          VARCHAR(32) NOT NULL DEFAULT 'draft',
     created_by      UUID REFERENCES settings.users(id),
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.acceptance_acts (
@@ -237,100 +238,100 @@ CREATE TABLE document.acceptance_acts (
     contract_id     UUID NOT NULL REFERENCES document.sale_contracts(id),
     calculation_id  UUID REFERENCES document.sale_calculations(id),
     number          VARCHAR(128) NOT NULL,
-    date            DATE NOT NULL,
-    period_from     DATE NOT NULL,
-    period_to       DATE NOT NULL,
+    date            VARCHAR(10) NOT NULL,
+    period_from     VARCHAR(10) NOT NULL,
+    period_to       VARCHAR(10) NOT NULL,
     volume          NUMERIC(18, 6) DEFAULT 0,
     cost            NUMERIC(18, 2) DEFAULT 0,
     status          VARCHAR(32) NOT NULL DEFAULT 'draft',
     created_by      UUID REFERENCES settings.users(id),
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.sales_markups (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     region_id   UUID REFERENCES directory.regions(id),
-    date_from   DATE NOT NULL,
+    date_from   VARCHAR(10) NOT NULL,
     date_to     DATE,
     rate        NUMERIC(18, 6) NOT NULL,
     unit        VARCHAR(16) NOT NULL DEFAULT 'rub_mwh',
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.nonreg_energy_prices (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     region_id   UUID REFERENCES directory.regions(id),
-    date_from   DATE NOT NULL,
+    date_from   VARCHAR(10) NOT NULL,
     date_to     DATE,
     price       NUMERIC(18, 6) NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.nonreg_power_prices (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     region_id   UUID REFERENCES directory.regions(id),
-    date_from   DATE NOT NULL,
+    date_from   VARCHAR(10) NOT NULL,
     date_to     DATE,
     price       NUMERIC(18, 6) NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.om_coefficients (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     region_id   UUID REFERENCES directory.regions(id),
-    date_from   DATE NOT NULL,
+    date_from   VARCHAR(10) NOT NULL,
     date_to     DATE,
     om_value    NUMERIC(18, 6) NOT NULL,
     infr_value  NUMERIC(18, 6),
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  BIGINT NOT NULL DEFAULT 0,
+    updated_at  BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.closed_periods (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     contract_id UUID NOT NULL REFERENCES document.sale_contracts(id),
-    period_from DATE NOT NULL,
-    period_to   DATE NOT NULL,
+    period_from VARCHAR(10) NOT NULL,
+    period_to   VARCHAR(10) NOT NULL,
     locked_by   UUID REFERENCES settings.users(id),
-    locked_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    locked_at   BIGINT NOT NULL DEFAULT 0,
     UNIQUE(contract_id, period_from, period_to)
 );
 
 CREATE TABLE document.consumer_premiums (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     contract_id     UUID NOT NULL REFERENCES document.sale_contracts(id),
-    period_from     DATE NOT NULL,
-    period_to       DATE NOT NULL,
+    period_from     VARCHAR(10) NOT NULL,
+    period_to       VARCHAR(10) NOT NULL,
     premium_type    VARCHAR(32) NOT NULL,
     amount          NUMERIC(18, 2) NOT NULL,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.agent_commissions (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     contract_id     UUID NOT NULL REFERENCES document.sale_contracts(id),
-    period_from     DATE NOT NULL,
-    period_to       DATE NOT NULL,
+    period_from     VARCHAR(10) NOT NULL,
+    period_to       VARCHAR(10) NOT NULL,
     rate            NUMERIC(18, 6) NOT NULL,
     amount          NUMERIC(18, 2) NOT NULL,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at      BIGINT NOT NULL DEFAULT 0,
+    updated_at      BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE document.delivery_point_discounts (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     delivery_point_id   UUID NOT NULL REFERENCES document.delivery_points(id),
-    date_from           DATE NOT NULL,
+    date_from           VARCHAR(10) NOT NULL,
     date_to             DATE,
     discount_type       VARCHAR(32) NOT NULL,
     value               NUMERIC(18, 6) NOT NULL,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at          BIGINT NOT NULL DEFAULT 0,
+    updated_at          BIGINT NOT NULL DEFAULT 0
 );
 
 -- ============================================================
@@ -342,7 +343,7 @@ CREATE TABLE constants.software_version (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     version         VARCHAR(32) NOT NULL,
     download_url    VARCHAR(1024),
-    published_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    published_at    BIGINT NOT NULL DEFAULT 0,
     release_notes   TEXT
 );
 

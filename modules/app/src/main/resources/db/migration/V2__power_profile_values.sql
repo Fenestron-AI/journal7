@@ -13,7 +13,7 @@ ALTER TABLE directory.power_profiles DROP COLUMN IF EXISTS data;
 CREATE TABLE directory.power_profile_values (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     profile_id  UUID NOT NULL REFERENCES directory.power_profiles(id) ON DELETE CASCADE,
-    period_date DATE NOT NULL,
+    period_date VARCHAR(10) NOT NULL,
     hour        SMALLINT NOT NULL CHECK (hour >= 0 AND hour <= 23),
     value       NUMERIC(18, 6),
 

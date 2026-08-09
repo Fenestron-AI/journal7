@@ -15,7 +15,8 @@ dependencies {
     implementation(project.libs.ktor.client.cio)
     implementation(project.libs.ktor.client.content.negotiation)
     implementation(project.libs.poi.ooxml)
-    implementation(project.libs.koin.ktor)
+    implementation(project.libs.koin.ktor3)
+    implementation(project.libs.ktor.server.core)
 
     testImplementation(project.libs.kotest.runner.junit5)
     testImplementation(project.libs.kotest.assertions.core)

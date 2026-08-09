@@ -1,0 +1,30 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+db:
+  host: "localhost"
+  port: 5432
+  name: "journal7"
+  user: "journal7"
+  password: "journal7_dev"
+  poolSize: 20
+
+redis:
+  host: "localhost"
+  port: 6379
+
+minio:
+  endpoint: "http://localhost:9000"
+  accessKey: "minioadmin"
+  secretKey: "minioadmin"
+  bucket: "journal7"
+
+jwt:
+  secret: "change-me-in-production-use-256-bit-key-change-me"
+  issuer: "journal7.ru"
+  accessTtlMinutes: 60
+  refreshTtlDays: 30
+
+cors:
+  origins: "http://localhost:5173"

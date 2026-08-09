@@ -17,7 +17,8 @@ dependencies {
     implementation(project.libs.exposed.jdbc)
     implementation(project.libs.poi.ooxml)
     implementation(project.libs.minio)
-    implementation(project.libs.koin.ktor)
+    implementation(project.libs.koin.ktor3)
+    implementation(project.libs.ktor.server.core)
 
     testImplementation(project.libs.kotest.runner.junit5)
     testImplementation(project.libs.kotest.assertions.core)

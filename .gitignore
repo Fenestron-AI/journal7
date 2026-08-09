@@ -44,3 +44,6 @@ output/
 node_modules/
 frontend/dist/
 frontend/.env
+
+# Local data (PostgreSQL, logs)
+data/

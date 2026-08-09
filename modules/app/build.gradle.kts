@@ -50,7 +50,7 @@ dependencies {
     implementation(project.libs.flyway.database.postgresql)
 
     implementation(project.libs.koin.core)
-    implementation(project.libs.koin.ktor)
+    implementation(project.libs.koin.ktor3)
     implementation(project.libs.koin.logger.slf4j)
 
     implementation(project.libs.hoplite.core)

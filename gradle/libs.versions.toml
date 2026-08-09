@@ -4,6 +4,7 @@ ktor = "3.1.2"
 exposed = "0.60.0"
 koin = "4.0.3"
 koin-ktor = "4.0.3"
+koin-ktor3 = "4.1.0-Beta8"
 hikari = "6.2.1"
 postgresql = "42.7.5"
 flyway = "11.4.0"
@@ -56,6 +57,7 @@ exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datet
 # Koin DI
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin-ktor" }
+koin-ktor3 = { module = "io.insert-koin:koin-ktor3", version.ref = "koin-ktor3" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 
 # Database

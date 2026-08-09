@@ -17,6 +17,9 @@ fun Application.configureCors(config: CorsConfig) {
         allowHeader(HttpHeaders.ContentType)
         allowHeader("X-Requested-With")
         allowCredentials = true
-        config.allowedOrigins.forEach { allowHost(it) }
+        config.allowedOrigins.forEach { origin ->
+            val cleanOrigin = origin.replace("http://", "").replace("https://", "")
+            allowHost(cleanOrigin, schemes = listOf("http", "https"))
+        }
     }
 }

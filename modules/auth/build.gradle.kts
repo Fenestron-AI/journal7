@@ -18,7 +18,8 @@ dependencies {
     implementation(project.libs.ktor.server.auth.jwt)
     implementation(project.libs.jwt)
     implementation(project.libs.bcrypt)
-    implementation(project.libs.koin.ktor)
+    implementation(project.libs.koin.ktor3)
+    implementation(project.libs.ktor.server.core)
 
     testImplementation(project.libs.kotest.runner.junit5)
     testImplementation(project.libs.kotest.assertions.core)
