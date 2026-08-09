@@ -229,6 +229,38 @@ cp .env.example .env
 
 ---
 
+## UX Principles (Anti-Omega)
+
+In Omega, to create a contract you had to: open counterparty form → save → open contract form → add object → save → open TP form → save → open TU form → save → open PU form → save. **10+ windows, 10+ explicit saves.** This is the exact pattern to avoid.
+
+### journal7 UX Rules
+
+1. **Single-page workflows** — one view, inline editing, auto-save. No modal chains.
+2. **Data tables with inline CRUD** — add/edit/delete rows directly in the table. Use Ant Design's editable table pattern.
+3. **Auto-save with debounce** — changes persist automatically 500ms after the last keystroke. Visual indicator: green checkmark when saved, red when error.
+4. **Side sheet for details** — click a row → right panel slides in with full details, editable in-place. Never open a new page/window.
+5. **Optimistic UI** — show the change immediately, roll back on server error. No loading spinners for simple operations.
+6. **Bulk operations** — select multiple rows → one action. Never "do X then Y then Z".
+7. **Real-time validation** — red border on invalid fields as you type, not after clicking "Save".
+8. **Virtual scrolling** — for lists >100 items (power profile values with 720+ rows). Never load everything into DOM.
+
+### Power Profile UX (specific)
+
+- **Heatmap** — calendar-like grid (31 columns × 24 rows), color gradient (blue=low, red=high). Zoom: month → day → hour. Uses canvas/webgl for 720+ cells, not DOM.
+- **Inline value editing** — click a cell in the heatmap → edit value → auto-save. No separate form.
+- **Validation overlay** — red border on invalid cells, yellow on missing data. Click anomaly → see detailed reason.
+- **Profile compare** — select 2 profiles → side-by-side diff view with delta heatmap.
+- **Import** — drag & drop Excel file → server-side parse → show diff preview (added/changed/deleted) → confirm.
+
+### API Design for UX
+
+- **Graph-like responses** — include related entity names (not just IDs) to avoid N+1 requests
+- **Cursor-based pagination** for infinite scroll lists
+- **ETag/versioning** — detect conflicts on concurrent edits
+- **Structured errors** — `{ code, message, field?, details? }` so the UI can point to the exact problem
+
+---
+
 ## Current Status
 
 - [x] Project skeleton (Gradle, modules, version catalog)
@@ -237,7 +269,7 @@ cp .env.example .env
 - [x] Docker Compose (PostgreSQL 16, Redis 7, MinIO)
 - [x] Flyway migration V1 (complete schema)
 - [x] Auth module (JWT, RBAC, password hashing, user CRUD)
-- [ ] Reference module
+- [x] Reference module (counterparties + power profiles with heatmap data)
 - [ ] Contract module
 - [ ] Calculation module
 - [ ] Billing module
