@@ -41,8 +41,8 @@ export default function DashboardPage() {
           <Col xs={24} sm={12} md={8} lg={4} xl={4} key={s.key}>
             <Card hoverable onClick={() => navigate(s.key)}
               style={{ borderTop: `3px solid ${s.color}`, cursor: 'pointer', height: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: s.color }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: s.color }}>
                   {s.icon}
                 </div>
               </div>
