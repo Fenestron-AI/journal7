@@ -75,6 +75,10 @@ body {
   border-right: none !important;
 }
 
+.j7-collapsed-menu-item {
+  transition: none !important;
+}
+
 .j7-collapsed-menu-item:hover {
   background: rgba(0, 0, 0, 0.06) !important;
 }
