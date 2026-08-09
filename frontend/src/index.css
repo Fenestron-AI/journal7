@@ -65,6 +65,11 @@ body {
   margin: 0;
 }
 
+aside.ant-layout-sider {
+  border-inline-end: none !important;
+  border-right: none !important;
+}
+
 h1,
 h2 {
   font-family: var(--heading);
