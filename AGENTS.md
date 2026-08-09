@@ -270,7 +270,7 @@ In Omega, to create a contract you had to: open counterparty form → save → o
 - [x] Flyway migration V1 (complete schema)
 - [x] Auth module (JWT, RBAC, password hashing, user CRUD)
 - [x] Reference module (counterparties + power profiles with heatmap data)
-- [ ] Contract module
+- [x] Contract module (6-level hierarchy, tree endpoint, nested CRUD)
 - [ ] Calculation module
 - [ ] Billing module
 - [ ] Reporting module
