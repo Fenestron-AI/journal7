@@ -10,6 +10,7 @@ export interface LegalDocumentResponse {
   status: string;
   filePath?: string;
   chunkCount: number;
+  canonical: boolean;
   metadata: Record<string, string>;
 }
 

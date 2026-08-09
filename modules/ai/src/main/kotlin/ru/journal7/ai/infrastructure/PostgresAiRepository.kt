@@ -21,6 +21,7 @@ object AiDocumentsTable : Table("ai.documents") {
     val filePath = text("file_path").nullable()
     val fileHash = text("file_hash").nullable()
     val chunkCount = integer("chunk_count").default(0)
+    val canonical = bool("canonical").default(false)
     val metadata = text("metadata")
     val createdAt = long("created_at")
     val updatedAt = long("updated_at")
@@ -246,6 +247,7 @@ class PostgresAiRepository : AiRepository {
         filePath = this[AiDocumentsTable.filePath],
         fileHash = this[AiDocumentsTable.fileHash],
         chunkCount = this[AiDocumentsTable.chunkCount],
+        canonical = this[AiDocumentsTable.canonical],
         metadata = try { json.decodeFromString(this[AiDocumentsTable.metadata]) } catch (_: Exception) { emptyMap() },
     )
 

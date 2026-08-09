@@ -29,43 +29,47 @@ class AiService(
      */
     suspend fun registerFromFile(file: File): LegalDocument {
         val parsed = parseDocumentMetadata(file.name)
-        val existing = repository.findDocumentByNumberAndRevision(parsed.number ?: file.name, parsed.revision)
+        val hash = sha256(file)
 
-        if (existing != null) {
-            // Same doc + revision: check if hash changed → re-ingest
-            val hash = sha256(file)
-            if (existing.fileHash == hash) {
-                return existing // unchanged, skip
+        // 1. Try to match with canonical document by doc_number
+        if (parsed.number != null) {
+            val allDocs = repository.listDocuments(null)
+            val canonical = allDocs.firstOrNull {
+                it.docNumber == parsed.number && it.canonical && it.status != DocumentStatus.ACTIVE
             }
-            val updated = existing.copy(
-                filePath = file.absolutePath,
-                fileHash = hash,
-                status = DocumentStatus.PROCESSING,
-            )
+            if (canonical != null) {
+                val updated = canonical.copy(
+                    title = parsed.title ?: canonical.title,
+                    revision = parsed.revision ?: canonical.revision,
+                    docDate = parsed.date ?: canonical.docDate,
+                    filePath = file.absolutePath,
+                    fileHash = hash,
+                    status = DocumentStatus.PROCESSING,
+                )
+                return repository.updateDocument(updated)
+            }
+        }
+
+        // 2. Check existing non-canonical by doc_number + revision
+        val existing = repository.findDocumentByNumberAndRevision(parsed.number ?: file.name, parsed.revision)
+        if (existing != null && !existing.canonical) {
+            if (existing.fileHash == hash) return existing
+            val updated = existing.copy(filePath = file.absolutePath, fileHash = hash, status = DocumentStatus.PROCESSING)
             return repository.updateDocument(updated)
         }
 
-        // If an older revision exists → supersede it
+        // 3. Supersede older revision
         if (parsed.number != null) {
             val older = repository.listDocuments(null)
-                .firstOrNull { it.docNumber == parsed.number && it.status == DocumentStatus.ACTIVE }
+                .firstOrNull { it.docNumber == parsed.number && it.status == DocumentStatus.ACTIVE && !it.canonical }
             if (older != null) {
                 repository.setDocumentStatus(older.id, DocumentStatus.SUPERSEDED)
-                repository.createNotification(
-                    AiNotification(
-                        id = UUID.randomUUID(),
-                        docNumber = parsed.number,
-                        title = parsed.title ?: file.name,
-                        message = "Новая редакция документа: ${parsed.revision ?: "неизвестна"}",
-                        read = false,
-                    )
-                )
             }
         }
 
-        val hash = sha256(file)
+        // 4. Create new non-canonical document
         val doc = LegalDocument(
-            id = UUID.randomUUID(),
+            id = java.util.UUID.randomUUID(),
             title = parsed.title ?: file.name,
             docNumber = parsed.number,
             docDate = parsed.date,

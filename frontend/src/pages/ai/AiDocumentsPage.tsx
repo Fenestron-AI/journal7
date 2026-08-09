@@ -1,38 +1,26 @@
-import { useState } from 'react';
-import { Table, Button, Tag, Typography, Space, Popconfirm, message, Badge, Tooltip } from 'antd';
-import { ReloadOutlined, BellOutlined, CaretRightOutlined, PauseOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useState, useMemo } from 'react';
+import { Table, Button, Tag, Typography, Space, Popconfirm, message, Tooltip, Select } from 'antd';
+import { CaretRightOutlined, PauseOutlined, DeleteOutlined, CheckCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { aiApi, LegalDocumentResponse, NotificationDto } from '../../api/ai';
+import { aiApi, LegalDocumentResponse } from '../../api/ai';
 
-const statusColors: Record<string, string> = {
-  ACTIVE: 'green',
-  SUPERSEDED: 'orange',
-  PROCESSING: 'blue',
-  ERROR: 'red',
+const statusConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
+  ACTIVE: { color: 'green', icon: <CheckCircleOutlined />, label: 'Готов' },
+  MISSING: { color: 'default', icon: <MinusCircleOutlined />, label: 'Нет файла' },
+  PROCESSING: { color: 'blue', icon: <ClockCircleOutlined />, label: 'Обработка' },
+  ERROR: { color: 'red', icon: <ExclamationCircleOutlined />, label: 'Ошибка' },
+  SUPERSEDED: { color: 'orange', icon: <CheckCircleOutlined />, label: 'Старая ред.' },
 };
 
 export default function AiDocumentsPage() {
-  const [status, setStatus] = useState<string | undefined>();
+  const [statusFilter, setStatusFilter] = useState<string | undefined>();
+  const [groupFilter, setGroupFilter] = useState<string | undefined>();
   const queryClient = useQueryClient();
 
   const { data: docs, isLoading } = useQuery({
-    queryKey: ['ai-docs', status],
-    queryFn: () => aiApi.listDocuments(status),
+    queryKey: ['ai-docs', statusFilter],
+    queryFn: () => aiApi.listDocuments(statusFilter || undefined),
     refetchInterval: 5000,
-  });
-
-  const { data: notifications } = useQuery({
-    queryKey: ['ai-notifications'],
-    queryFn: () => aiApi.notifications(false),
-    refetchInterval: 60000,
-  });
-
-  const refreshMut = useMutation({
-    mutationFn: aiApi.refresh,
-    onSuccess: () => {
-      message.success('Сканирование watch-директории запущено');
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['ai-docs'] }), 3000);
-    },
   });
 
   const startMut = useMutation({
@@ -51,67 +39,90 @@ export default function AiDocumentsPage() {
     onSuccess: () => { message.success('Удалено'); queryClient.invalidateQueries({ queryKey: ['ai-docs'] }); },
   });
 
-  const markReadMut = useMutation({
-    mutationFn: aiApi.markRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ai-notifications'] }),
-  });
+  const groups = useMemo(() => {
+    const g = new Set<string>();
+    docs?.forEach(d => { if (d.metadata?.group) g.add(d.metadata.group); });
+    return Array.from(g);
+  }, [docs]);
+
+  const filtered = useMemo(() => {
+    let result = docs || [];
+    if (groupFilter) result = result.filter(d => d.metadata?.group === groupFilter);
+    return result;
+  }, [docs, groupFilter]);
+
+  const stats = useMemo(() => {
+    const s: Record<string, number> = {};
+    filtered.forEach(d => { s[d.status] = (s[d.status] || 0) + 1; });
+    return s;
+  }, [filtered]);
 
   const columns = [
-    { title: 'Наименование', dataIndex: 'title', ellipsis: true },
-    { title: '№', dataIndex: 'docNumber', width: 70, render: (v: string) => v && <Tag>{v}</Tag> },
-    { title: 'Редакция', dataIndex: 'revision', width: 110 },
-    { title: 'Тип', dataIndex: 'docType', width: 90, render: (v: string) => <Tag>{v}</Tag> },
-    { title: 'Чанки', dataIndex: 'chunkCount', width: 70 },
-    { title: 'Статус', dataIndex: 'status', width: 110, render: (v: string) => <Tag color={statusColors[v] || 'default'}>{v}</Tag> },
-    { title: '', width: 80, render: (_: any, r: LegalDocumentResponse) => (
-      <Space size={0}>
-        {r.status !== 'PROCESSING' ? (
-          <Tooltip title="Запустить обработку">
-            <Button type="text" size="small" icon={<CaretRightOutlined />}
-              onClick={() => startMut.mutate(r.id)} disabled={!r.filePath} />
-          </Tooltip>
-        ) : (
-          <Tooltip title="Остановить обработку">
-            <Button type="text" size="small" icon={<PauseOutlined />}
-              onClick={() => cancelMut.mutate(r.id)} danger />
-          </Tooltip>
-        )}
-        <Popconfirm title="Удалить документ?" onConfirm={() => deleteMut.mutate(r.id)}>
-          <Tooltip title="Удалить">
-            <Button type="text" size="small" icon={<DeleteOutlined />} danger />
-          </Tooltip>
-        </Popconfirm>
-      </Space>
-    )},
+    {
+      title: 'Документ', dataIndex: 'title', ellipsis: true,
+      render: (v: string, r: LegalDocumentResponse) => (
+        <span>
+          <span style={{ color: r.canonical ? '#1677ff' : '#999', fontWeight: r.canonical ? 500 : 400 }}>{v}</span>
+          {r.docNumber && <Tag style={{ marginLeft: 6 }}>{r.docNumber}</Tag>}
+        </span>
+      ),
+    },
+    { title: 'Редакция', dataIndex: 'revision', width: 110, render: (v: string) => v || '—' },
+    {
+      title: 'Статус', dataIndex: 'status', width: 120,
+      render: (v: string) => {
+        const cfg = statusConfig[v] || statusConfig.MISSING;
+        return <Tag color={cfg.color} icon={cfg.icon}>{cfg.label}</Tag>;
+      },
+    },
+    { title: 'Чанки', dataIndex: 'chunkCount', width: 70, align: 'center' as const },
+    {
+      title: '', width: 100,
+      render: (_: any, r: LegalDocumentResponse) => (
+        <Space size={0}>
+          {r.filePath && r.status !== 'PROCESSING' && (
+            <Tooltip title="Обработать">
+              <Button type="text" size="small" icon={<CaretRightOutlined />} onClick={() => startMut.mutate(r.id)} />
+            </Tooltip>
+          )}
+          {r.status === 'PROCESSING' && (
+            <Tooltip title="Остановить">
+              <Button type="text" size="small" icon={<PauseOutlined />} onClick={() => cancelMut.mutate(r.id)} danger />
+            </Tooltip>
+          )}
+          {!r.canonical && (
+            <Popconfirm title="Удалить?" onConfirm={() => deleteMut.mutate(r.id)}>
+              <Tooltip title="Удалить"><Button type="text" size="small" icon={<DeleteOutlined />} danger /></Tooltip>
+            </Popconfirm>
+          )}
+        </Space>
+      ),
+    },
   ];
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>Нормативная база</Typography.Title>
+        <Typography.Title level={4} style={{ margin: 0 }}>Нормативно-правовая база</Typography.Title>
         <Space>
-          {notifications && notifications.length > 0 && (
-            <PopoverList notifications={notifications} onRead={(id) => markReadMut.mutate(id)} />
-          )}
-          <Button icon={<ReloadOutlined />} onClick={() => refreshMut.mutate()} loading={refreshMut.isPending}>
-            Сканировать директорию
-          </Button>
+          <Select placeholder="Группа" allowClear style={{ width: 220 }} value={groupFilter} onChange={setGroupFilter}
+            options={groups.map(g => ({ label: g, value: g }))} />
+          <Select placeholder="Статус" allowClear style={{ width: 150 }} value={statusFilter} onChange={setStatusFilter}
+            options={Object.entries(statusConfig).map(([k, v]) => ({ label: v.label, value: k }))} />
         </Space>
       </div>
-      <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
-        Документы сканируются из <code>data/legal-docs/current/</code>. Положите новый файл туда и нажмите «Сканировать директорию».
-        Для обработки с эмбеддингами нажмите «Запустить».
-      </Typography.Paragraph>
 
-      <Table columns={columns} dataSource={docs} loading={isLoading} rowKey="id" size="middle" pagination={false} />
+      <div style={{ marginBottom: 12, display: 'flex', gap: 16 }}>
+        {Object.entries(statusConfig).map(([k, v]) => (
+          <Typography.Text key={k} style={{ fontSize: 13, cursor: 'pointer', opacity: statusFilter && statusFilter !== k ? 0.5 : 1 }}
+            onClick={() => setStatusFilter(statusFilter === k ? undefined : k)}>
+            <Tag color={v.color} icon={v.icon}>{v.label}: {(stats as any)[k] || 0}</Tag>
+          </Typography.Text>
+        ))}
+      </div>
+
+      <Table columns={columns} dataSource={filtered} loading={isLoading} rowKey="id" size="middle"
+        pagination={false} scroll={{ y: 'calc(100vh - 300px)' }} />
     </div>
-  );
-}
-
-function PopoverList({ notifications, onRead }: { notifications: NotificationDto[]; onRead: (id: string) => void }) {
-  return (
-    <Badge count={notifications.length}>
-      <Button icon={<BellOutlined />}>Уведомления</Button>
-    </Badge>
   );
 }

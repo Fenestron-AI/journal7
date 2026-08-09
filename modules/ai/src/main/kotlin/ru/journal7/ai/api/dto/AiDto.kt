@@ -13,6 +13,7 @@ data class DocumentResponse(
     val status: String,
     val filePath: String? = null,
     val chunkCount: Int = 0,
+    val canonical: Boolean = false,
     val metadata: Map<String, String> = emptyMap(),
 )
 

@@ -96,6 +96,7 @@ private fun LegalDocument.toResponse() = DocumentResponse(
     status = status.name,
     filePath = filePath,
     chunkCount = chunkCount,
+    canonical = canonical,
     metadata = metadata,
 )
 
