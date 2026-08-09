@@ -104,6 +104,27 @@ class AiService(
 
     suspend fun workerHealthy(): Boolean = worker.checkHealth()
 
+    suspend fun startIngest(id: UUID) {
+        val doc = repository.findDocumentById(id) ?: throw DocumentNotFound()
+        if (doc.filePath == null) throw IllegalStateException("No file path for document")
+
+        // Trigger worker ingestion
+        try {
+            repository.setDocumentStatus(id, DocumentStatus.PROCESSING)
+            worker.ingest(id.toString(), doc.filePath)
+        } catch (e: Exception) {
+            repository.setDocumentStatus(id, DocumentStatus.ERROR)
+            throw e
+        }
+    }
+
+    suspend fun cancelIngest(id: UUID) {
+        val doc = repository.findDocumentById(id) ?: throw DocumentNotFound()
+        if (doc.status == DocumentStatus.PROCESSING) {
+            repository.setDocumentStatus(id, DocumentStatus.ACTIVE)
+        }
+    }
+
     suspend fun listNotifications(read: Boolean?): List<AiNotification> =
         repository.listNotifications(read)
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Table, Button, Tag, Typography, Space, Popconfirm, message, Badge } from 'antd';
-import { ReloadOutlined, BellOutlined } from '@ant-design/icons';
+import { ReloadOutlined, BellOutlined, PlayCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiApi, LegalDocumentResponse, NotificationDto } from '../../api/ai';
 
@@ -18,6 +18,7 @@ export default function AiDocumentsPage() {
   const { data: docs, isLoading } = useQuery({
     queryKey: ['ai-docs', status],
     queryFn: () => aiApi.listDocuments(status),
+    refetchInterval: 5000,
   });
 
   const { data: notifications } = useQuery({
@@ -34,12 +35,20 @@ export default function AiDocumentsPage() {
     },
   });
 
+  const startMut = useMutation({
+    mutationFn: (id: string) => aiApi.startIngest(id),
+    onSuccess: () => { message.success('Обработка запущена'); queryClient.invalidateQueries({ queryKey: ['ai-docs'] }); },
+    onError: (e: any) => message.error(e.response?.data?.message || 'Ошибка'),
+  });
+
+  const cancelMut = useMutation({
+    mutationFn: (id: string) => aiApi.cancelIngest(id),
+    onSuccess: () => { message.success('Остановлено'); queryClient.invalidateQueries({ queryKey: ['ai-docs'] }); },
+  });
+
   const deleteMut = useMutation({
     mutationFn: aiApi.deleteDocument,
-    onSuccess: () => {
-      message.success('Удалено');
-      queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
-    },
+    onSuccess: () => { message.success('Удалено'); queryClient.invalidateQueries({ queryKey: ['ai-docs'] }); },
   });
 
   const markReadMut = useMutation({
@@ -54,10 +63,18 @@ export default function AiDocumentsPage() {
     { title: 'Тип', dataIndex: 'docType', width: 90, render: (v: string) => <Tag>{v}</Tag> },
     { title: 'Чанки', dataIndex: 'chunkCount', width: 70 },
     { title: 'Статус', dataIndex: 'status', width: 110, render: (v: string) => <Tag color={statusColors[v] || 'default'}>{v}</Tag> },
-    { title: '', width: 60, render: (_: any, r: LegalDocumentResponse) => (
-      <Popconfirm title="Удалить документ?" onConfirm={() => deleteMut.mutate(r.id)}>
-        <Button type="link" size="small" danger>Уд.</Button>
-      </Popconfirm>
+    { title: '', width: 150, render: (_: any, r: LegalDocumentResponse) => (
+      <Space size={0}>
+        {r.status !== 'PROCESSING' ? (
+          <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => startMut.mutate(r.id)}
+            disabled={!r.filePath}>Запустить</Button>
+        ) : (
+          <Button type="link" size="small" icon={<StopOutlined />} onClick={() => cancelMut.mutate(r.id)} danger>Стоп</Button>
+        )}
+        <Popconfirm title="Удалить документ?" onConfirm={() => deleteMut.mutate(r.id)}>
+          <Button type="link" size="small" icon={<DeleteOutlined />} danger />
+        </Popconfirm>
+      </Space>
     )},
   ];
 
@@ -76,6 +93,7 @@ export default function AiDocumentsPage() {
       </div>
       <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
         Документы сканируются из <code>data/legal-docs/current/</code>. Положите новый файл туда и нажмите «Сканировать директорию».
+        Для обработки с эмбеддингами нажмите «Запустить».
       </Typography.Paragraph>
 
       <Table columns={columns} dataSource={docs} loading={isLoading} rowKey="id" size="middle" pagination={false} />

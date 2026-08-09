@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     # --- Yandex Cloud ---
     yandex_folder_id: str = ""
     yandex_api_key: str = ""
+    yandex_iam_token: str = ""
     yandex_embedding_model: str = "text-search-doc"     # для индексации
     yandex_embedding_query_model: str = "text-search-query"  # для поиска
     yandex_llm_model: str = "yandexgpt/latest"

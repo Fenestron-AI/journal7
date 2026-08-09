@@ -35,7 +35,7 @@ CREATE TABLE ai.chunks (
     document_id UUID NOT NULL REFERENCES ai.documents(id) ON DELETE CASCADE,
     chunk_index INTEGER NOT NULL,
     content     TEXT NOT NULL,
-    embedding   vector(1024),
+    embedding   vector,
     metadata    TEXT NOT NULL DEFAULT '{}',
     UNIQUE (document_id, chunk_index)
 );

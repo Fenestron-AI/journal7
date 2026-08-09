@@ -1,6 +1,7 @@
 """Yandex Cloud API client: embeddings + YandexGPT."""
 
 import httpx
+import time
 
 from config import settings
 
@@ -11,6 +12,11 @@ _client = httpx.Client(timeout=120)
 
 
 def _headers() -> dict:
+    if settings.yandex_iam_token:
+        return {
+            "Authorization": f"Bearer {settings.yandex_iam_token}",
+            "Content-Type": "application/json",
+        }
     return {
         "Authorization": f"Api-Key {settings.yandex_api_key}",
         "Content-Type": "application/json",
@@ -18,13 +24,16 @@ def _headers() -> dict:
 
 
 def embed(text: str, query: bool = False) -> list[float]:
-    """Return embedding vector via Yandex text-search model (1024 dims)."""
+    """Return embedding vector via Yandex text-search model (256 dims)."""
     model = settings.yandex_embedding_query_model if query else settings.yandex_embedding_model
     payload = {
         "modelUri": f"emb://{settings.yandex_folder_id}/{model}/latest",
         "text": text,
     }
     resp = _client.post(EMBEDDING_URL, headers=_headers(), json=payload)
+    if resp.status_code == 429:
+        time.sleep(0.5)  # rate limit, retry once
+        resp = _client.post(EMBEDDING_URL, headers=_headers(), json=payload)
     resp.raise_for_status()
     data = resp.json()
     return data["embedding"]

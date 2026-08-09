@@ -15,7 +15,7 @@ from ingestion import chunk_text, extract_text
 from qa import ask
 from yandex import embed
 
-yandex_available = bool(settings.yandex_api_key and settings.yandex_folder_id)
+yandex_available = bool(settings.yandex_folder_id and (settings.yandex_api_key or settings.yandex_iam_token))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ai-worker")

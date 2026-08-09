@@ -36,6 +36,18 @@ fun Route.aiRoutes() {
             call.respond(HttpStatusCode.NoContent)
         }
 
+        post("documents/{id}/ingest") {
+            val id = UUID.fromString(call.parameters["id"])
+            aiService.startIngest(id)
+            call.respond(mapOf("status" to "started"))
+        }
+
+        post("documents/{id}/cancel") {
+            val id = UUID.fromString(call.parameters["id"])
+            aiService.cancelIngest(id)
+            call.respond(mapOf("status" to "cancelled"))
+        }
+
         post("documents/refresh") {
             watcher.scan()
             call.respond(mapOf("status" to "scanning"))
