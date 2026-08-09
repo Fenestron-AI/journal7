@@ -49,7 +49,9 @@ export default function AppLayout() {
           items={menuItems.map(item => ({
             ...item,
             label: collapsed ? (
-              <Tooltip title={item.label} placement="right" mouseEnterDelay={1} trigger="hover">{item.label}</Tooltip>
+              <Tooltip title={item.label} placement="right" mouseEnterDelay={1} trigger={["hover"]}>
+                <span>{item.label}</span>
+              </Tooltip>
             ) : item.label
           }))}
           onClick={({ key }) => navigate(key)} />
