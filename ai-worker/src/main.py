@@ -81,6 +81,9 @@ def _ingest(document_id: str, file_path: str) -> dict:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("AI worker started. Yandex configured: %s", bool(settings.yandex_api_key))
+    # Auto-resume downloads in background
+    import threading
+    threading.Thread(target=download_all, daemon=True).start()
     yield
     logger.info("AI worker stopped")
 

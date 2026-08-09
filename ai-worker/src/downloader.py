@@ -1,84 +1,180 @@
-"""Background downloader: downloads PDFs from so-ups.ru one-by-one,
-updates document status, then triggers ingestion."""
+"""Resumable parallel downloader for so-ups.ru regulatory documents.
+
+Features:
+- Resume: restart stuck DOWNLOADING → MISSING on startup
+- 2 parallel threads with work queue
+- Exponential retry (3 attempts: 5s, 15s, 45s)
+- Streaming download (Content-Length for progress)
+- 120s per-file timeout, 3s inter-request delay
+- Thread-safe DB via separate connections
+"""
 
 import json
 import logging
+import os
+import queue
+import threading
 import time
 from pathlib import Path
 
 import httpx
 
 from config import settings
-from db import get_document, set_document_status, _connect
+from db import set_document_status, _connect
 
 logger = logging.getLogger("downloader")
 
+MAX_RETRIES = 3
+RETRY_DELAYS = [5, 15, 45]
+TIMEOUT = 120
+WORKERS = 2
+DELAY_BETWEEN = 3.0
 
-def download_all():
-    """Download all MISSING documents with URLs, one by one."""
+_request_lock = threading.Lock()
+_next_request = 0.0
+
+
+def _rate_limit():
+    global _next_request
+    with _request_lock:
+        now = time.time()
+        wait = _next_request - now
+        if wait > 0:
+            time.sleep(wait)
+        _next_request = time.time() + DELAY_BETWEEN
+
+
+def _reset_stuck():
     conn = _connect()
     cur = conn.cursor()
+    cur.execute("UPDATE ai.documents SET status = 'MISSING' WHERE canonical = TRUE AND status = 'DOWNLOADING'")
+    count = cur.rowcount
+    conn.commit()
+    cur.close()
+    conn.close()
+    if count:
+        logger.info("Reset %d stuck DOWNLOADING → MISSING", count)
+
+
+def _mark_downloaded(doc_id: str, filepath: str):
+    conn = _connect()
+    cur = conn.cursor()
+    cur.execute("UPDATE ai.documents SET status = 'DOWNLOADED', file_path = %s WHERE id = %s", (filepath, doc_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def _download_one(doc_id: str, doc_num: str, url: str, filename: str, dest: Path) -> bool:
+    for attempt in range(MAX_RETRIES):
+        try:
+            _rate_limit()
+            logger.info("[%s] Download (attempt %d/%d)...", doc_num, attempt + 1, MAX_RETRIES)
+            with httpx.stream("GET", url, timeout=TIMEOUT, follow_redirects=True) as resp:
+                resp.raise_for_status()
+                downloaded = 0
+                with open(dest, "wb") as f:
+                    for chunk in resp.iter_bytes(chunk_size=65536):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                logger.info("[%s] OK: %dKB", doc_num, downloaded // 1024)
+            _mark_downloaded(doc_id, str(dest))
+            return True
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.warning("[%s] 404 Not Found (skip)", doc_num)
+                set_document_status(doc_id, "ERROR")
+                return False
+            logger.warning("[%s] HTTP %d (att %d)", doc_num, e.response.status_code, attempt + 1)
+        except Exception as e:
+            logger.warning("[%s] %s (att %d)", doc_num, type(e).__name__, attempt + 1)
+        if dest.exists():
+            os.remove(dest)
+        if attempt < MAX_RETRIES - 1:
+            delay = RETRY_DELAYS[attempt]
+            logger.info("[%s] Retry in %ds...", doc_num, delay)
+            time.sleep(delay)
+    set_document_status(doc_id, "ERROR")
+    return False
+
+
+def download_all():
+    _reset_stuck()
+
+    # Skip already-downloaded with valid files
+    outdir = Path(settings.watch_dir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    conn = _connect()
+    cur = conn.cursor()
+    cur.execute("SELECT id, doc_number FROM ai.documents WHERE canonical = TRUE AND status = 'DOWNLOADED'")
+    for doc_id, doc_num in cur.fetchall():
+        dest = outdir / f"{doc_num.replace('/','_').replace(' ','_')}.pdf"
+        if not dest.exists() or dest.stat().st_size < 1000:
+            cur2 = conn.cursor()
+            cur2.execute("UPDATE ai.documents SET status = 'MISSING' WHERE id = %s", (doc_id,))
+            cur2.close()
+            conn.commit()
+    conn.commit()
+
+    # Get MISSING docs
     cur.execute(
         "SELECT id, doc_number, metadata FROM ai.documents "
         "WHERE canonical = TRUE AND status = 'MISSING' AND metadata::jsonb->>'url' IS NOT NULL "
-        "ORDER BY doc_date"
+        "ORDER BY metadata::jsonb->>'priority' DESC, doc_date"
     )
     rows = cur.fetchall()
     cur.close()
     conn.close()
 
-    logger.info("Found %d documents to download", len(rows))
-    outdir = Path(settings.watch_dir)
-    outdir.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        logger.info("No documents to download")
+        return {"total": 0, "downloaded": 0, "failed": 0}
 
-    total = len(rows)
-    downloaded = 0
-    for i, (doc_id, doc_num, meta_str) in enumerate(rows):
+    logger.info("Download %d documents (%d workers)", len(rows), WORKERS)
+
+    q: queue.Queue = queue.Queue()
+    for doc_id, doc_num, meta_str in rows:
         try:
             meta = json.loads(meta_str)
         except Exception:
             meta = {}
         url = meta.get("url", "")
         if not url:
-            set_document_status(doc_id, "MISSING")
             continue
-
         filename = f"{doc_num.replace('/','_').replace(' ','_')}.pdf"
         dest = outdir / filename
-
-        # Already downloaded?
-        if dest.exists() and dest.stat().st_size > 1000:
-            set_document_status(doc_id, "DOWNLOADED", 0)
-            downloaded += 1
-            continue
-
-        # Start download
         set_document_status(doc_id, "DOWNLOADING")
-        logger.info("[%d/%d] Downloading %s: %s", i + 1, total, doc_num, url)
+        q.put((doc_id, doc_num, url, filename, dest))
 
-        try:
-            resp = httpx.get(url, timeout=300, follow_redirects=True)
-            resp.raise_for_status()
-            dest.write_bytes(resp.content)
-            size_kb = len(resp.content) // 1024
-            set_document_status(doc_id, "DOWNLOADED", 0)
-            logger.info("[%d/%d] OK %s (%dKB)", i + 1, total, filename, size_kb)
+    success = 0
+    failed = 0
+    lock = threading.Lock()
 
-            # Update file_path in DB so watcher/UI can pick it up
-            conn2 = _connect()
-            cur2 = conn2.cursor()
-            cur2.execute(
-                "UPDATE ai.documents SET file_path = %s WHERE id = %s",
-                (str(dest), doc_id),
-            )
-            conn2.commit()
-            cur2.close()
-            conn2.close()
+    def worker():
+        nonlocal success, failed
+        while not q.empty():
+            try:
+                task = q.get_nowait()
+            except queue.Empty:
+                break
+            doc_id, doc_num, url, filename, dest = task
+            if _download_one(doc_id, doc_num, url, filename, dest):
+                with lock:
+                    success += 1
+            else:
+                with lock:
+                    failed += 1
+            q.task_done()
 
-            downloaded += 1
-            time.sleep(1.5)  # rate limit
-        except Exception as e:
-            logger.error("[%d/%d] FAILED %s: %s", i + 1, total, doc_num, e)
-            set_document_status(doc_id, "ERROR", 0)
-    logger.info("Done: %d/%d downloaded", downloaded, total)
-    return {"total": total, "downloaded": downloaded}
+    threads = []
+    for _ in range(WORKERS):
+        t = threading.Thread(target=worker, daemon=True)
+        t.start()
+        threads.append(t)
+
+    for t in threads:
+        t.join()
+
+    logger.info("Done: %d OK, %d failed", success, failed)
+    return {"total": len(rows), "downloaded": success, "failed": failed}
+
