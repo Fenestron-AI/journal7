@@ -5,7 +5,7 @@ import kotlinx.serialization.Contextual
 import ru.journal7.core.types.UuidEntity
 import java.util.UUID
 
-enum class DocumentStatus { MISSING, DOWNLOADING, DOWNLOADED, PROCESSING, ACTIVE, SUPERSEDED, ERROR }
+enum class DocumentStatus { MISSING, DOWNLOADING, DOWNLOADED, PROCESSING, ACTIVE, OUTDATED, ARCHIVED, ERROR }
 
 @Serializable
 data class LegalDocument(
@@ -20,6 +20,10 @@ data class LegalDocument(
     val fileHash: String? = null,
     val chunkCount: Int = 0,
     val canonical: Boolean = false,
+    val originalFilename: String? = null,
+    val fileSize: Long = 0,
+    val source: String = "so-ups.ru",
+    val sourceUrl: String? = null,
     val metadata: Map<String, String> = emptyMap(),
 )
 

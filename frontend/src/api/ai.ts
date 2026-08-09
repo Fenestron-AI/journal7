@@ -11,6 +11,10 @@ export interface LegalDocumentResponse {
   filePath?: string;
   chunkCount: number;
   canonical: boolean;
+  originalFilename?: string;
+  fileSize: number;
+  source: string;
+  sourceUrl?: string;
   metadata: Record<string, string>;
 }
 
@@ -48,6 +52,10 @@ export const aiApi = {
     api.post(`/ai/documents/${id}/cancel`).then(r => r.data),
   downloadAll: () =>
     api.post('/ai/download').then(r => r.data),
+  sync: () =>
+    api.post('/ai/sync').then(r => r.data),
+  activity: () =>
+    api.get<{ count: number }>('/ai/activity').then(r => r.data),
   refresh: () =>
     api.post('/ai/documents/refresh').then(r => r.data),
   ask: (question: string, messages: { role: string; content: string }[] = []) =>

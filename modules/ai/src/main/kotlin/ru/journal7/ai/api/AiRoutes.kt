@@ -19,10 +19,16 @@ fun Route.aiRoutes() {
     val workerClient by inject<ru.journal7.ai.infrastructure.AiWorkerClient>()
 
     route("/api/v1/ai") {
-        // --- Download ---
-        post("download") {
-            val ok = workerClient.downloadAll()
+        // --- Sync ---
+        post("sync") {
+            val ok = workerClient.downloadAll() // reuse download endpoint for now
             call.respond(mapOf("started" to ok))
+        }
+
+        get("activity") {
+            val docs = aiService.listDocuments(null)
+            val count = docs.count { it.status in setOf(DocumentStatus.MISSING, DocumentStatus.PROCESSING, DocumentStatus.ERROR, DocumentStatus.DOWNLOADING) }
+            call.respond(mapOf("count" to count))
         }
         // --- Documents ---
         get("documents") {
@@ -103,6 +109,10 @@ private fun LegalDocument.toResponse() = DocumentResponse(
     filePath = filePath,
     chunkCount = chunkCount,
     canonical = canonical,
+    originalFilename = originalFilename,
+    fileSize = fileSize,
+    source = source,
+    sourceUrl = sourceUrl,
     metadata = metadata,
 )
 

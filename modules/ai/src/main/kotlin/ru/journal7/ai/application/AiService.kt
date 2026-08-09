@@ -63,7 +63,7 @@ class AiService(
             val older = repository.listDocuments(null)
                 .firstOrNull { it.docNumber == parsed.number && it.status == DocumentStatus.ACTIVE && !it.canonical }
             if (older != null) {
-                repository.setDocumentStatus(older.id, DocumentStatus.SUPERSEDED)
+                repository.setDocumentStatus(older.id, DocumentStatus.OUTDATED)
             }
         }
 
