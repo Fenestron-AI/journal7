@@ -272,9 +272,9 @@ In Omega, to create a contract you had to: open counterparty form → save → o
 - [x] Reference module (counterparties + power profiles with heatmap data)
 - [x] Contract module (6-level hierarchy, tree endpoint, nested CRUD)
 - [x] Calculation module (CK1/CK3/CK4 strategies, hourly results)
-- [ ] Billing module
-- [ ] Reporting module
-- [ ] Integration module
+- [x] Billing module (invoices, acceptance acts, auto-generate from calc)
+- [x] Reporting module (Excel export with Apache POI)
+- [x] Integration module (file import, 1C export stub)
 - [ ] Frontend (React + TypeScript)
 - [ ] Tests
 - [ ] CI/CD (GitHub Actions)
