@@ -265,18 +265,42 @@ In Omega, to create a contract you had to: open counterparty form → save → o
 
 > **Поля форм (черновик):** см. `docs/fields-prospective.md` — возможный состав полей на основе материалов PromSE + форм Omega. Решение по составу не принято.
 
-- [x] Project skeleton (Gradle, modules, version catalog)
-- [x] Core module (Entity, Result, DomainError, DomainEvent)
-- [x] App module (Ktor, Hoplite, HikariCP, Flyway, plugins)
-- [x] Docker Compose (PostgreSQL 16, Redis 7, MinIO)
-- [x] Flyway migration V1 (complete schema)
-- [x] Auth module (JWT, RBAC, password hashing, user CRUD)
-- [x] Reference module (counterparties + power profiles with heatmap data)
-- [x] Contract module (6-level hierarchy, tree endpoint, nested CRUD)
-- [x] Calculation module (CK1/CK3/CK4 strategies, hourly results)
-- [x] Billing module (invoices, acceptance acts, auto-generate from calc)
-- [x] Reporting module (Excel export with Apache POI)
-- [x] Integration module (file import, 1C export stub)
-- [x] Frontend (React 19 + Ant Design + Zustand + React Query)
-- [ ] Tests
-- [ ] CI/CD (GitHub Actions)
+### Backend modules: 10/10 ✅
+- [x] Core, Auth, Reference, Contract, Calculation, Billing, Reporting, Integration, AI, App
+
+### Frontend: ✅
+- [x] React 19 + Ant Design + Zustand + React Query (7+ pages)
+
+---
+
+## Session 2026-08-09: Runtime Notes
+
+### Services (running manually, no Docker)
+- **PostgreSQL 16**: `pg_ctl -D data/pgdata -l data/pg.log start`  
+  Binary extracted from `.deb` packages in `/tmp/pg-extract/usr/lib/postgresql/16/`.
+  Port 5432.
+- **Backend**: `./gradlew :app:run` (port 8080)
+- **Frontend**: `setsid -f bash -c 'cd frontend && exec npx vite --host 0.0.0.0 --port 5173' &>/tmp/frontend.log`
+- **Worker**: `setsid -f bash -c 'cd ai-worker && exec env PYTHONPATH=src ./venv/bin/python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8000' &>/tmp/ai-worker.log`
+- **Login**: admin / admin123
+
+### AI / Legal Knowledge Base
+- [x] pgvector 0.6.0 extension in PostgreSQL
+- [x] Yandex Cloud: IAM token configured (folder `b1g188ctm6pfq3pf3lfk`)
+- [x] Sync with so-ups.ru: 77 docs parsed, 71 MISSING, 6 ARCHIVED
+- [x] Embeddings tested (256-dim Yandex, works with IAM token, 429 on bulk)
+- [ ] Downloads incomplete: 62 local files (old generic names), need cleanup
+- [ ] Q&A agent: code ready, needs docs ACTIVE with embeddings
+
+### Flyway migrations
+- V1: init schema
+- V2: power profile values  
+- V3: ai schema (documents, chunks, notifications)
+- V4: canonical so-ups.ru seed (74 docs) — now superseded by V5 live sync
+- V5: sync model (sources, original_filename, file_size, source_url, archive)
+
+### Next session
+1. Удалить старые файлы из data/legal-docs/current/ (имена типа 100.pdf)
+2. Запустить worker → авто-докачка 71 MISSING документов с оригинальными именами
+3. Обработать ключевые документы (442, 1178, 861, 35-ФЗ) — кнопка ▶ в UI
+4. Протестировать AI-чат с цитированием норм
