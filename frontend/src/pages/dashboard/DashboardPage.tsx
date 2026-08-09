@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, Row, Col, Statistic, Typography, Spin } from 'antd';
-import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { counterpartyApi, contractApi, powerProfileApi } from '../../api/endpoints';
 
@@ -45,7 +45,6 @@ export default function DashboardPage() {
                 <div style={{ width: 40, height: 40, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: s.color }}>
                   {s.icon}
                 </div>
-                <ArrowRightOutlined style={{ color: '#bbb', fontSize: 12 }} />
               </div>
               <Statistic title={<Typography.Text type="secondary" style={{ fontSize: 13 }}>{s.title}</Typography.Text>}
                 value={(data as any)?.[s.stat] || 0}
