@@ -37,7 +37,7 @@ export default function AppLayout() {
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="light"
         trigger={null} width={220}
         style={{ borderRight: '1px solid #f0f0f0', overflow: 'auto', height: '100vh', position: 'sticky', top: 0, left: 0 }}>
-        <div style={{ padding: collapsed ? '12px 8px' : '16px', fontWeight: 700, fontSize: 18, color: '#1677ff', textAlign: 'center' }}>
+        <div onClick={() => setCollapsed(!collapsed)} style={{ padding: collapsed ? '12px 8px' : '16px', fontWeight: 700, fontSize: 18, color: '#1677ff', textAlign: 'center', cursor: 'pointer' }}>
           {collapsed ? 'j7' : 'journal7'}
         </div>
 
