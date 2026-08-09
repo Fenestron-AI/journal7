@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Table, Button, Tag, Typography, Space, Popconfirm, message, Badge } from 'antd';
-import { ReloadOutlined, BellOutlined, PlayCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Typography, Space, Popconfirm, message, Badge, Tooltip } from 'antd';
+import { ReloadOutlined, BellOutlined, CaretRightOutlined, PauseOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiApi, LegalDocumentResponse, NotificationDto } from '../../api/ai';
 
@@ -63,16 +63,23 @@ export default function AiDocumentsPage() {
     { title: 'Тип', dataIndex: 'docType', width: 90, render: (v: string) => <Tag>{v}</Tag> },
     { title: 'Чанки', dataIndex: 'chunkCount', width: 70 },
     { title: 'Статус', dataIndex: 'status', width: 110, render: (v: string) => <Tag color={statusColors[v] || 'default'}>{v}</Tag> },
-    { title: '', width: 150, render: (_: any, r: LegalDocumentResponse) => (
+    { title: '', width: 80, render: (_: any, r: LegalDocumentResponse) => (
       <Space size={0}>
         {r.status !== 'PROCESSING' ? (
-          <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => startMut.mutate(r.id)}
-            disabled={!r.filePath}>Запустить</Button>
+          <Tooltip title="Запустить обработку">
+            <Button type="text" size="small" icon={<CaretRightOutlined />}
+              onClick={() => startMut.mutate(r.id)} disabled={!r.filePath} />
+          </Tooltip>
         ) : (
-          <Button type="link" size="small" icon={<StopOutlined />} onClick={() => cancelMut.mutate(r.id)} danger>Стоп</Button>
+          <Tooltip title="Остановить обработку">
+            <Button type="text" size="small" icon={<PauseOutlined />}
+              onClick={() => cancelMut.mutate(r.id)} danger />
+          </Tooltip>
         )}
         <Popconfirm title="Удалить документ?" onConfirm={() => deleteMut.mutate(r.id)}>
-          <Button type="link" size="small" icon={<DeleteOutlined />} danger />
+          <Tooltip title="Удалить">
+            <Button type="text" size="small" icon={<DeleteOutlined />} danger />
+          </Tooltip>
         </Popconfirm>
       </Space>
     )},
