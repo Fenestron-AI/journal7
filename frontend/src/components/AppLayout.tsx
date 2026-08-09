@@ -47,6 +47,7 @@ export default function AppLayout() {
               <Tooltip key={item.key} title={item.label} placement="right" mouseEnterDelay={1} trigger={["hover"]}>
                 <Button type="text" icon={item.icon}
                   onClick={() => navigate(item.key)}
+                  className="j7-collapsed-menu-item"
                   style={{
                     width: 48, height: 48, fontSize: 18,
                     color: location.pathname === item.key ? '#1677ff' : '#666',
