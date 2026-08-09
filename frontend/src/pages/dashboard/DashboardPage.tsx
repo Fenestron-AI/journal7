@@ -40,7 +40,7 @@ export default function DashboardPage() {
         {sections.map((s) => (
           <Col xs={24} sm={12} md={8} lg={4} xl={4} key={s.key}>
             <Card hoverable onClick={() => navigate(s.key)}
-              style={{ borderTop: `3px solid ${s.color}`, cursor: 'pointer', height: '100%' }}>
+              style={{ borderTop: `3px solid ${s.color}`, cursor: 'pointer', height: '100%', textAlign: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: s.color }}>
                   {s.icon}
