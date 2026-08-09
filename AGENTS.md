@@ -271,7 +271,7 @@ In Omega, to create a contract you had to: open counterparty form → save → o
 - [x] Auth module (JWT, RBAC, password hashing, user CRUD)
 - [x] Reference module (counterparties + power profiles with heatmap data)
 - [x] Contract module (6-level hierarchy, tree endpoint, nested CRUD)
-- [ ] Calculation module
+- [x] Calculation module (CK1/CK3/CK4 strategies, hourly results)
 - [ ] Billing module
 - [ ] Reporting module
 - [ ] Integration module
