@@ -49,7 +49,7 @@ export default function AppLayout() {
       </Sider>
       <Layout>
         <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', height: 48, lineHeight: '48px' }}>
-          <Tooltip title={collapsed ? 'Развернуть меню' : 'Свернуть меню'}>
+          <Tooltip title={collapsed ? 'Развернуть меню' : 'Свернуть меню'} mouseEnterDelay={0.5}>
             <Button type="text" icon={collapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
               onClick={() => setCollapsed(!collapsed)}
               style={{ fontSize: 14, width: 40, height: 40 }} />
