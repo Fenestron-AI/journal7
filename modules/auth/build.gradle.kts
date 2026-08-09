@@ -10,6 +10,10 @@ dependencies {
 
     implementation(project(":core"))
 
+    implementation(project.libs.exposed.core)
+    implementation(project.libs.exposed.dao)
+    implementation(project.libs.exposed.jdbc)
+    implementation(project.libs.exposed.json)
     implementation(project.libs.ktor.server.auth)
     implementation(project.libs.ktor.server.auth.jwt)
     implementation(project.libs.jwt)

@@ -11,10 +11,4 @@ fun Application.configureRouting() {
         gzip { priority = 1.0 }
         deflate { priority = 10.0 }
     }
-
-    routing {
-        get("/api/health") {
-            call.respondText("""{"status":"ok","version":"0.1.0"}""", ContentType.Application.Json)
-        }
-    }
 }
