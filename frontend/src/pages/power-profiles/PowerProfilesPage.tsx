@@ -84,7 +84,7 @@ export default function PowerProfilesPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>Профили мощности</Typography.Title>
+        <Typography.Title level={4} style={{ margin: '0 0 16px' }}>Профили мощности</Typography.Title>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: ['power-profiles'] })} />
           <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setModalOpen(true); }}>Добавить</Button>

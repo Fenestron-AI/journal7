@@ -59,7 +59,7 @@ export default function CounterpartiesPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>Контрагенты</Typography.Title>
+        <Typography.Title level={4} style={{ margin: '0 0 16px' }}>Контрагенты</Typography.Title>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: ['counterparties'] })} />
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Добавить</Button>

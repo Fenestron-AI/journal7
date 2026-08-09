@@ -49,7 +49,7 @@ export default function CalculationsPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>Расчёты</Typography.Title>
+        <Typography.Title level={4} style={{ margin: '0 0 16px' }}>Расчёты</Typography.Title>
         <Space>
           <Select placeholder="Выберите договор" showSearch optionFilterProp="label" style={{ width: 320 }}
             value={contractId} onChange={setContractId} allowClear

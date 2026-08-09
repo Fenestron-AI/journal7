@@ -77,7 +77,7 @@ export default function ContractsPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>Договоры продажи</Typography.Title>
+        <Typography.Title level={4} style={{ margin: '0 0 16px' }}>Договоры продажи</Typography.Title>
         <Space>
           <Input placeholder="Номер договора..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{ width: 200 }} allowClear prefix={<ApartmentOutlined />} />

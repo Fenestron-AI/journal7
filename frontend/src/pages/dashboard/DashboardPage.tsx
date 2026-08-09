@@ -35,7 +35,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <Typography.Title level={4} style={{ marginBottom: 24 }}>Дашборд</Typography.Title>
+      <Typography.Title level={4} style={{ margin: '0 0 16px' }}>Дашборд</Typography.Title>
       <Row gutter={[16, 16]}>
         {sections.map((s) => (
           <Col xs={24} sm={12} md={8} lg={4} xl={4} key={s.key}>
