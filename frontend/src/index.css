@@ -83,6 +83,15 @@ body {
   background: rgba(0, 0, 0, 0.06) !important;
 }
 
+.ant-menu-inline .ant-menu-item,
+.ant-menu-inline .ant-menu-item > span {
+  transition: none !important;
+}
+
+.ant-menu-item {
+  transition: none !important;
+}
+
 h1,
 h2 {
   font-family: var(--heading);
