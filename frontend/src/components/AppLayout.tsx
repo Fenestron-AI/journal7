@@ -8,17 +8,21 @@ const { Sider, Content, Header } = Layout;
 
 function usePersistedState<T>(key: string, defaultValue: T): [T, (v: T) => void] {
   const [state, setState] = useState<T>(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : defaultValue;
-    } catch { return defaultValue; }
+    try { const stored = localStorage.getItem(key); return stored ? JSON.parse(stored) : defaultValue; }
+    catch { return defaultValue; }
   });
-  const setAndPersist = (value: T) => {
-    setState(value);
-    localStorage.setItem(key, JSON.stringify(value));
-  };
+  const setAndPersist = (value: T) => { setState(value); localStorage.setItem(key, JSON.stringify(value)); };
   return [state, setAndPersist];
 }
+
+const menuItems = [
+  { key: '/', icon: <DashboardOutlined />, label: 'Дашборд' },
+  { key: '/counterparties', icon: <TeamOutlined />, label: 'Контрагенты' },
+  { key: '/contracts', icon: <FileTextOutlined />, label: 'Договоры' },
+  { key: '/power-profiles', icon: <ThunderboltOutlined />, label: 'Профили мощности' },
+  { key: '/calculations', icon: <CalculatorOutlined />, label: 'Расчёты' },
+  { key: '/invoices', icon: <FilePdfOutlined />, label: 'Счета' },
+];
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -28,33 +32,32 @@ export default function AppLayout() {
 
   useEffect(() => { if (!user) fetchUser(); }, []);
 
-  const menuItems = [
-    { key: '/', icon: <DashboardOutlined />, label: 'Дашборд' },
-    { key: '/counterparties', icon: <TeamOutlined />, label: 'Контрагенты' },
-    { key: '/contracts', icon: <FileTextOutlined />, label: 'Договоры' },
-    { key: '/power-profiles', icon: <ThunderboltOutlined />, label: 'Профили мощности' },
-    { key: '/calculations', icon: <CalculatorOutlined />, label: 'Расчёты' },
-    { key: '/invoices', icon: <FilePdfOutlined />, label: 'Счета' },
-  ];
-
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="light"
         trigger={null} width={220}
         style={{ borderRight: '1px solid #f0f0f0', overflow: 'auto', height: '100vh', position: 'sticky', top: 0, left: 0 }}>
-        <div style={{ padding: collapsed ? '16px 8px' : '16px', fontWeight: 700, fontSize: 18, color: '#1677ff', textAlign: 'center' }}>
+        <div style={{ padding: collapsed ? '12px 8px' : '16px', fontWeight: 700, fontSize: 18, color: '#1677ff', textAlign: 'center' }}>
           {collapsed ? 'j7' : 'journal7'}
         </div>
-        <Menu mode="inline" selectedKeys={[location.pathname]}
-          items={menuItems.map(item => ({
-            ...item,
-            label: collapsed ? (
-              <Tooltip title={item.label} placement="right" mouseEnterDelay={1} trigger={["hover"]}>
-                <span>{item.label}</span>
+
+        {collapsed ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 0' }}>
+            {menuItems.map(item => (
+              <Tooltip key={item.key} title={item.label} placement="right" mouseEnterDelay={1} trigger={["hover"]}>
+                <Button type="text" icon={item.icon}
+                  onClick={() => navigate(item.key)}
+                  style={{
+                    width: 48, height: 48, fontSize: 18,
+                    color: location.pathname === item.key ? '#1677ff' : '#666',
+                    background: location.pathname === item.key ? '#e6f4ff' : 'transparent',
+                  }} />
               </Tooltip>
-            ) : item.label
-          }))}
-          onClick={({ key }) => navigate(key)} />
+            ))}
+          </div>
+        ) : (
+          <Menu mode="inline" selectedKeys={[location.pathname]} items={menuItems} onClick={({ key }) => navigate(key)} />
+        )}
       </Sider>
       <Layout>
         <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', height: 48, lineHeight: '48px' }}>
