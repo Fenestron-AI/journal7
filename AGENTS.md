@@ -263,6 +263,8 @@ In Omega, to create a contract you had to: open counterparty form → save → o
 
 ## Current Status
 
+> **Поля форм (черновик):** см. `docs/fields-prospective.md` — возможный состав полей на основе материалов PromSE + форм Omega. Решение по составу не принято.
+
 - [x] Project skeleton (Gradle, modules, version catalog)
 - [x] Core module (Entity, Result, DomainError, DomainEvent)
 - [x] App module (Ktor, Hoplite, HikariCP, Flyway, plugins)
