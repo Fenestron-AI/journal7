@@ -5,7 +5,9 @@ import kotlinx.serialization.Contextual
 import ru.journal7.core.types.UuidEntity
 import java.util.UUID
 
-enum class DocumentStatus { MISSING, DOWNLOADING, DOWNLOADED, PROCESSING, ACTIVE, OUTDATED, ARCHIVED, ERROR }
+enum class DocumentStatus { TRACKED, INGESTED, ARCHIVED }
+enum class DownloadState { downloading, downloaded, error }
+enum class ProcessingState { processing, done, error }
 
 @Serializable
 data class LegalDocument(
@@ -15,11 +17,16 @@ data class LegalDocument(
     val docDate: String? = null,
     val revision: String? = null,
     val docType: String = "НПА",
-    val status: DocumentStatus = DocumentStatus.ACTIVE,
+    val docCategory: String? = null,
+    val syncInterval: String? = null,
+    val status: DocumentStatus = DocumentStatus.TRACKED,
+    val downloadState: String? = null,
+    val processingState: String? = null,
+    val priority: String = "normal",
+    val pinned: Boolean = false,
     val filePath: String? = null,
     val fileHash: String? = null,
     val chunkCount: Int = 0,
-    val canonical: Boolean = false,
     val originalFilename: String? = null,
     val fileSize: Long = 0,
     val source: String = "so-ups.ru",

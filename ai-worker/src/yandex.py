@@ -39,10 +39,11 @@ def embed(text: str, query: bool = False) -> list[float]:
     return data["embedding"]
 
 
-def complete(system_prompt: str, user_text: str) -> str:
+def complete(system_prompt: str, user_text: str, model: str | None = None) -> str:
     """Call YandexGPT completion."""
+    model_name = model or settings.yandex_llm_model
     payload = {
-        "modelUri": f"gpt://{settings.yandex_folder_id}/{settings.yandex_llm_model}",
+        "modelUri": f"gpt://{settings.yandex_folder_id}/{model_name}",
         "completionOptions": {
             "stream": False,
             "temperature": settings.yandex_llm_temperature,

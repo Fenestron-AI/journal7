@@ -1,288 +1,300 @@
-const styles: Record<string, React.CSSProperties> = {
+import { useState } from 'react';
+
+const s: Record<string, React.CSSProperties> = {
   container: {
-    maxWidth: 1400,
-    width: '100%',
-    background: 'white',
-    borderRadius: 24,
-    padding: '40px 30px 50px',
-    overflowX: 'auto',
+    padding: '20px 24px 20px',
+  },
+  header: {
+    marginBottom: 16,
   },
   title: {
-    textAlign: 'center',
+    fontSize: '1.2rem',
+    fontWeight: 700,
+    color: '#10304f',
+  },
+  tag: {
+    display: 'inline-block',
+    marginTop: 4,
+    padding: '2px 10px',
+    borderRadius: 999,
+    background: '#e8f2ff',
+    border: '1px solid #c9ddf7',
+    color: '#1a6bd6',
+    fontSize: '0.68rem',
     fontWeight: 600,
-    fontSize: '2.2rem',
-    color: '#0b2b4a',
-    letterSpacing: '-0.5px',
-    marginBottom: 6,
+    textTransform: 'uppercase',
   },
-  subtitle: {
-    textAlign: 'center',
-    color: '#3a5a7a',
-    fontSize: '1.1rem',
-    borderBottom: '2px solid #e6edf5',
-    paddingBottom: 20,
-    marginBottom: 30,
-  },
-  schemeGrid: {
+  columns: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '40px 50px',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 12,
     alignItems: 'start',
   } as React.CSSProperties,
   col: {
+    border: '1px solid #dce7f3',
+    borderRadius: 14,
+    padding: '12px 12px 14px',
+    background: '#f7fafd',
     display: 'flex',
     flexDirection: 'column',
+    gap: 8,
   } as React.CSSProperties,
-  colTitle: {
-    fontWeight: 600,
-    fontSize: '1.5rem',
-    color: '#1a3a5e',
-    paddingBottom: 12,
-    borderBottom: '4px solid #cbdbe9',
-    marginBottom: 25,
+  colL1: { borderTop: '3px solid #1a6bd6' },
+  colL2: { borderTop: '3px solid #d98c1f' },
+  colL3: { borderTop: '3px solid #2c9e63' },
+  colL4: { borderTop: '3px solid #7a8aa0' },
+  colHead: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
-  } as React.CSSProperties,
-  colTitleBadge: {
-    background: '#1a3a5e',
-    color: 'white',
-    fontSize: '0.9rem',
-    fontWeight: 700,
-    padding: '2px 14px',
-    borderRadius: 40,
+    gap: 8,
+    paddingBottom: 10,
+    borderBottom: '1px solid #e3ecf5',
   },
-  node: {
-    background: 'white',
-    borderRadius: 18,
-    padding: '18px 22px',
-    marginBottom: 14,
-    boxShadow: '0 4px 14px rgba(0,20,40,0.06)',
-    border: '1.5px solid #dce6f0',
-  },
-  nodeStrong: {
-    display: 'block',
-    fontSize: '1.1rem',
-    color: '#0f2b44',
-    marginBottom: 4,
-  },
-  nodeDesc: {
-    fontSize: '0.92rem',
-    color: '#2a4a6a',
-    opacity: 0.85,
-    lineHeight: 1.4,
-  },
-  badge: {
-    display: 'inline-block',
-    padding: '2px 14px',
-    borderRadius: 30,
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    marginTop: 8,
-  },
-  badgeBlue: { background: '#eaf1f9', color: '#1f4970' },
-  badgeGreen: { background: '#e2f0e5', color: '#1a5c3a' },
-  badgeOrange: { background: '#fef0e0', color: '#a8681a' },
-  badgePurple: { background: '#ede7f6', color: '#5e3c8a' },
-  connector: {
+  colNum: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#7f9bb9',
-    fontSize: '1.5rem',
-    letterSpacing: 6,
-    margin: '-4px 0 4px 0',
-    opacity: 0.6,
+    fontSize: '0.75rem',
+    fontWeight: 700,
+    flex: '0 0 auto',
+    color: '#ffffff',
   },
-  subgroup: {
-    background: '#f7faff',
-    borderRadius: 18,
-    padding: '16px 18px 10px 18px',
-    margin: '6px 0 10px 0',
-    border: '1px dashed #b8cee2',
+  colNum1: { background: '#1a6bd6' },
+  colNum2: { background: '#d98c1f' },
+  colNum3: { background: '#2c9e63' },
+  colNum4: { background: '#7a8aa0' },
+  colTitle: {
+    fontSize: '0.88rem',
+    fontWeight: 700,
+    color: '#10304f',
+    lineHeight: 1.2,
   },
-  subgroupNode: {
+  colSubtitle: {
+    display: 'block',
+    fontSize: '0.65rem',
+    fontWeight: 400,
+    color: '#7c90a8',
+  },
+  card: {
     background: '#ffffff',
-    border: '1px solid #d6e2ef',
-    borderRadius: 18,
-    padding: '14px 18px',
-    marginBottom: 8,
+    border: '1px solid #e3ecf5',
+    borderRadius: 10,
+    padding: '10px 12px',
   },
-  verticalFlow: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    margin: '6px 0 8px 0',
-    color: '#7f9bb9',
-    fontSize: '1.6rem',
-    lineHeight: 0.6,
+  cardB: {
+    display: 'block',
+    fontSize: '0.82rem',
+    color: '#10304f',
+    marginBottom: 2,
+  },
+  cardSpan: {
+    fontSize: '0.73rem',
+    color: '#5a7188',
+    lineHeight: 1.35,
+    display: 'block',
+  },
+  pill: {
+    display: 'inline-block',
+    marginTop: 6,
+    padding: '1px 8px',
+    borderRadius: 999,
+    fontSize: '0.63rem',
+    fontWeight: 600,
+    cursor: 'default',
+  },
+  pillBlue: { background: '#e8f2ff', color: '#1a6bd6' },
+  pillAmber: { background: '#fdf2e0', color: '#b37012' },
+  pillGreen: { background: '#e6f6ee', color: '#1f7d4c' },
+  pillGray: { background: '#eef2f7', color: '#5a7188' },
+  cardLink: {
+    display: 'block',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+    outline: 'none',
   } as React.CSSProperties,
-  flexRow: {
+  cardLinkHover: {
+    borderColor: '#1a6bd6',
+    boxShadow: '0 4px 16px rgba(26, 107, 214, 0.12)',
+  } as React.CSSProperties,
+  srcLine: {
+    marginTop: 8,
+    paddingTop: 6,
+    borderTop: '1px solid #eef2f7',
+    fontSize: '0.68rem',
+    lineHeight: 1,
+    color: '#7c90a8',
     display: 'flex',
-    flexWrap: 'wrap',
-    gap: '6px 12px',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
+    transition: 'color 0.15s',
   } as React.CSSProperties,
 };
 
+function Pill({ text, color }: { text: string; color: 'blue' | 'amber' | 'green' | 'gray' }) {
+  const map = { blue: s.pillBlue, amber: s.pillAmber, green: s.pillGreen, gray: s.pillGray };
+  return <span style={{ ...s.pill, ...map[color] }}>{text}</span>;
+}
+
+function CardLink({ title, desc, pill, pillColor, href }: {
+  title: string; desc: string; pill: string; pillColor: 'blue' | 'amber' | 'green' | 'gray'; href: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <a
+      href={href} tabIndex={-1} onClick={(e) => { e.preventDefault(); window.open(href, '_blank', 'noopener,noreferrer'); }}
+      onBlur={() => setHovered(false)}
+      style={{
+        ...s.card,
+        ...s.cardLink,
+        outline: 'none',
+        borderColor: hovered ? '#1a6bd6' : s.card.borderColor || '#e3ecf5',
+        boxShadow: hovered ? '0 4px 16px rgba(26, 107, 214, 0.12)' : 'none',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      title={`Первоисточник: ${new URL(href).hostname}`}
+    >
+      <b style={s.cardB}>{title}</b>
+      <span style={s.cardSpan}>{desc}</span>
+      <Pill text={pill} color={pillColor} />
+      <span style={{
+        ...s.srcLine,
+        ...(hovered ? { color: '#1a6bd6' } : {}),
+      }}>
+        {new URL(href).hostname}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </span>
+    </a>
+  );
+}
+
+function ColHead({ num, color, title, subtitle }: {
+  num: number; color: '1' | '2' | '3' | '4'; title: string; subtitle: string;
+}) {
+  const numColors = { 1: s.colNum1, 2: s.colNum2, 3: s.colNum3, 4: s.colNum4 };
+  return (
+    <div style={s.colHead}>
+      <div style={{ ...s.colNum, ...numColors[color] }}>{num}</div>
+      <h3 style={s.colTitle}>{title}<small style={s.colSubtitle}>{subtitle}</small></h3>
+    </div>
+  );
+}
+
 export default function MarketScheme() {
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Полная структура электроэнергетики России</h1>
-      <div style={styles.subtitle}>ОРЭМ, РРЭ, инфраструктура, регуляторы и управление</div>
-
-      <div style={styles.schemeGrid}>
-        {/* === ЛЕВАЯ КОЛОНКА: ОРЭМ и инфраструктура === */}
-        <div style={styles.col}>
-          <div style={styles.colTitle}>
-            <span style={styles.colTitleBadge}>ОРЭМ</span> Оптовый рынок
-          </div>
-
-          <div style={{ ...styles.node, borderColor: '#1f4a74', background: '#f3f8ff' }}>
-            <strong style={styles.nodeStrong}>Правительство РФ / ФАС России</strong>
-            <div style={styles.nodeDesc}>Государственное регулирование. Утверждение законов, правил, тарифов и порядка ценообразования.</div>
-            <span style={{ ...styles.badge, ...styles.badgeBlue }}>Верховный регулятор</span>
-          </div>
-
-          <div style={styles.connector}>⬇</div>
-
-          <div style={{ ...styles.node, borderColor: '#1f5a7a', background: '#f0f7fe' }}>
-            <strong style={styles.nodeStrong}>Ассоциация «НП Совет рынка»</strong>
-            <div style={styles.nodeDesc}>Главный регулятор ОРЭМ. Разрабатывает и утверждает <strong>Регламенты ОРЭМ</strong> и <strong>Договор о присоединении (ДОП)</strong>.</div>
-            <span style={{ ...styles.badge, ...styles.badgeBlue }}>np-sr.ru</span>
-          </div>
-
-          <div style={{ ...styles.verticalFlow, marginTop: 4 }}>
-            <span>⬇</span>
-            <span style={{ fontSize: '1rem', opacity: 0.5 }}>100% дочка</span>
-            <span style={{ fontSize: '0.9rem', opacity: 0.5 }}>учредитель</span>
-            <span>⬇</span>
-          </div>
-
-          <div style={styles.subgroup}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px 10px', marginBottom: 6 }}>
-              <span style={{ fontWeight: 600, color: '#1a3a5e' }}>Операторы инфраструктуры</span>
-              <span style={{ fontSize: '0.75rem', color: '#4a6a8a' }}>(дочерние компании Совета рынка)</span>
-            </div>
-            <div style={{ ...styles.subgroupNode, borderLeft: '4px solid #2a7a9a' }}>
-              <strong style={styles.nodeStrong}>АО «АТС»</strong>
-              <div style={styles.nodeDesc}>Администратор торговой системы. Проводит <strong>конкурентные отборы</strong> (РСВ, КОМ), определяет цены и объемы.</div>
-              <span style={{ ...styles.badge, ...styles.badgeBlue }}>atsenergo.ru</span>
-            </div>
-            <div style={{ ...styles.subgroupNode, borderLeft: '4px solid #2a7a9a', marginTop: 6 }}>
-              <strong style={styles.nodeStrong}>АО «ЦФР»</strong>
-              <div style={styles.nodeDesc}>Центр финансовых расчетов. Проводит все <strong>денежные расчеты</strong> между участниками по итогам торгов.</div>
-              <span style={{ ...styles.badge, ...styles.badgeBlue }}>cfrenergo.ru</span>
-            </div>
-          </div>
-
-          <div style={styles.connector}>⬇</div>
-
-          <div style={{ ...styles.node, borderColor: '#3d7a5a', background: '#f4fbf7' }}>
-            <strong style={styles.nodeStrong}>Участники ОРЭМ</strong>
-            <div style={styles.nodeDesc}>
-              <strong>Генерирующие компании</strong> (продавцы), <strong>крупные потребители</strong> и <strong>энергосбытовые компании</strong> (покупатели).
-            </div>
-            <div style={{ ...styles.flexRow, marginTop: 6 }}>
-              <span style={{ ...styles.badge, ...styles.badgeGreen }}>&gt; 25 МВт</span>
-              <span style={{ ...styles.badge, ...styles.badgeGreen }}>Торги</span>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 30, borderTop: '2px dashed #c0d4e6', paddingTop: 20 }}>
-            <div style={{ ...styles.colTitle, fontSize: '1.2rem', borderBottomColor: '#a0bcd6', marginBottom: 18 }}>
-              <span style={{ background: '#2a5a7a', color: 'white', fontSize: '0.9rem', fontWeight: 700, padding: '2px 14px', borderRadius: 40 }}>⚙</span> Системный оператор
-            </div>
-            <div style={{ ...styles.node, borderColor: '#2a5a7a', background: '#f2f7fd' }}>
-              <strong style={styles.nodeStrong}>АО «СО ЕЭС»</strong>
-              <div style={styles.nodeDesc}>Оперативно-диспетчерское управление. Обеспечивает <strong>физическую надежность</strong> энергосистемы, баланс генерации и потребления.</div>
-              <span style={{ ...styles.badge, ...styles.badgeBlue }}>so-ups.ru</span>
-            </div>
-            <div style={{ paddingLeft: 14, marginTop: 8, borderLeft: '2px solid #b8cee2' }}>
-              <div style={{ fontSize: '0.85rem', color: '#2a4a6a', padding: '4px 0' }}><span style={{ opacity: 0.7 }}>→</span> ЦДУ (Центральное)</div>
-              <div style={{ fontSize: '0.85rem', color: '#2a4a6a', padding: '2px 0' }}><span style={{ opacity: 0.7 }}>→</span> 7 ОДУ (объединенные)</div>
-              <div style={{ fontSize: '0.85rem', color: '#2a4a6a', padding: '2px 0' }}><span style={{ opacity: 0.7 }}>→</span> Региональные ДУ</div>
-              <div style={{ fontSize: '0.85rem', color: '#2a4a6a', padding: '2px 0' }}><span style={{ opacity: 0.7 }}>→</span> Диспетчерские пункты на станциях</div>
-            </div>
-          </div>
+    <div style={s.container}>
+      <div style={s.header}>
+        <div>
+          <h2 style={s.title}>Структура электроэнергетики России</h2>
+          <span style={s.tag}>Справочная схема</span>
         </div>
+      </div>
 
-        {/* === ПРАВАЯ КОЛОНКА: РРЭ и потребители === */}
-        <div style={styles.col}>
-          <div style={styles.colTitle}>
-            <span style={styles.colTitleBadge}>РРЭ</span> Розничный рынок
-          </div>
+      <div style={s.columns}>
 
-          <div style={{ background: '#eef4fa', borderRadius: 20, padding: '12px 18px', marginBottom: 12, border: '1px solid #d0dfee' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontWeight: 500, color: '#1a3a5e' }}>← Поставка от ОРЭМ</span>
-              <span style={{ fontSize: '0.8rem', color: '#3a5a7a' }}>(энергосбытовые компании и ГП)</span>
-            </div>
-            <div style={{ fontSize: '0.85rem', color: '#2a4a6a', marginTop: 4 }}>
-              <span style={{ ...styles.badge, background: '#d4e2f2', color: '#1a3a5e' }}>Гарантирующие поставщики</span>
-              <span style={{ ...styles.badge, background: '#d4e2f2', color: '#1a3a5e', marginLeft: 8 }}>Независимые сбытовые компании</span>
-            </div>
+        {/* ОРЭМ */}
+        <section style={{ ...s.col, ...s.colL1 }}>
+          <ColHead num={1} color="1" title="Оптовый рынок" subtitle="ОРЭМ · > 25 МВт" />
+          <div style={s.card}>
+            <b style={s.cardB}>Генерирующие компании</b>
+            <span style={s.cardSpan}>Продают энергию и мощность</span>
+            <Pill text="продавцы" color="blue" />
           </div>
+          <CardLink
+            title="АО «АТС»"
+            desc="Организует торги (РСВ, КОМ), определяет цены и объёмы"
+            pill="инфраструктура"
+            pillColor="gray"
+            href="https://atsenergo.ru"
+          />
+          <CardLink
+            title="АО «ЦФР»"
+            desc="Денежные расчёты по итогам торгов"
+            pill="финансы"
+            pillColor="gray"
+            href="https://cfrenergo.ru"
+          />
+          <div style={s.card}>
+            <b style={s.cardB}>Покупатели</b>
+            <span style={s.cardSpan}>Крупные потребители и энергосбытовые компании</span>
+            <Pill text="покупатели" color="blue" />
+          </div>
+        </section>
 
-          <div style={{ ...styles.node, borderColor: '#b47a3a', background: '#fefaf2' }}>
-            <strong style={styles.nodeStrong}>Гарантирующие поставщики (ГП)</strong>
-            <div style={styles.nodeDesc}>Обязаны заключить договор с любым потребителем в своей зоне. Продают энергию <strong>населению</strong> по регулируемым тарифам, а бизнесу — по свободным ценам.</div>
-            <span style={{ ...styles.badge, ...styles.badgeOrange }}>Обязательная услуга</span>
+        {/* РРЭ */}
+        <section style={{ ...s.col, ...s.colL2 }}>
+          <ColHead num={2} color="2" title="Розничный рынок" subtitle="РРЭ" />
+          <div style={s.card}>
+            <b style={s.cardB}>Гарантирующие поставщики</b>
+            <span style={s.cardSpan}>Обязаны заключить договор с любым потребителем в зоне</span>
+            <Pill text="обязательная услуга" color="amber" />
           </div>
+          <div style={s.card}>
+            <b style={s.cardB}>Независимые сбыты</b>
+            <span style={s.cardSpan}>Работают на свободных ценах</span>
+            <Pill text="конкуренция" color="amber" />
+          </div>
+          <div style={s.card}>
+            <b style={s.cardB}>Малая генерация</b>
+            <span style={s.cardSpan}>Поставляет энергию напрямую на РРЭ</span>
+            <Pill text="< 25 МВт" color="amber" />
+          </div>
+        </section>
 
-          <div style={{ ...styles.node, borderColor: '#b47a3a', background: '#fefaf2' }}>
-            <strong style={styles.nodeStrong}>Независимые сбытовые компании (НЭСО)</strong>
-            <div style={styles.nodeDesc}>Работают на свободном рынке, предлагая различные условия и тарифы для бизнеса и промышленности.</div>
-            <span style={{ ...styles.badge, ...styles.badgeOrange }}>Конкурентный сектор</span>
+        {/* Потребители */}
+        <section style={{ ...s.col, ...s.colL3 }}>
+          <ColHead num={3} color="3" title="Конечные потребители" subtitle="цена = энергия + передача + сбыт" />
+          <div style={s.card}>
+            <b style={s.cardB}>Население</b>
+            <span style={s.cardSpan}>Регулируемые тарифы, установленные государством</span>
+            <Pill text="тарифы" color="green" />
           </div>
+          <div style={s.card}>
+            <b style={s.cardB}>Малый и средний бизнес</b>
+            <span style={s.cardSpan}>Свободные цены, выбор ценовой категории</span>
+            <Pill text="свободные цены" color="green" />
+          </div>
+          <div style={s.card}>
+            <b style={s.cardB}>Крупные заводы</b>
+            <span style={s.cardSpan}>Могут покупать на РРЭ или напрямую на ОРЭМ</span>
+            <Pill text="гибкий выбор" color="green" />
+          </div>
+        </section>
 
-          <div style={{ ...styles.node, borderColor: '#5a7a4a', background: '#f4faf5' }}>
-            <strong style={styles.nodeStrong}>Малая генерация</strong>
-            <div style={styles.nodeDesc}>Производители мощностью <strong>менее 25 МВт</strong>. Не участвуют в ОРЭМ, поставляют энергию напрямую на РРЭ.</div>
-            <span style={{ ...styles.badge, ...styles.badgeGreen }}>Локальные поставщики</span>
-          </div>
-
-          <div style={{ ...styles.node, borderColor: '#4a6a8a', background: '#f3f8fe' }}>
-            <strong style={styles.nodeStrong}>Территориальные сетевые организации (ТСО)</strong>
-            <div style={styles.nodeDesc}>Обеспечивают передачу электроэнергии по распределительным сетям до конечного потребителя. Тариф на передачу — часть цены РРЭ.</div>
-            <span style={{ ...styles.badge, ...styles.badgeBlue }}>Инфраструктура</span>
-          </div>
-
-          <div style={{ ...styles.verticalFlow }}>
-            <span>⬇</span>
-            <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>поставка + передача</span>
-            <span>⬇</span>
-          </div>
-
-          <div style={{ ...styles.subgroup, background: '#f2f6fc' }}>
-            <div style={{ fontWeight: 600, color: '#1a3a5e', marginBottom: 8 }}>Конечные потребители</div>
-            <div style={{ ...styles.subgroupNode, borderLeft: '4px solid #b07a3a' }}>
-              <strong style={styles.nodeStrong}>Население</strong>
-              <div style={styles.nodeDesc}>Покупают по <strong>регулируемым тарифам</strong>, установленным государством. Гарантированный поставщик.</div>
-              <span style={{ ...styles.badge, ...styles.badgeOrange }}>Тарифы</span>
-            </div>
-            <div style={{ ...styles.subgroupNode, borderLeft: '4px solid #3a7a5a' }}>
-              <strong style={styles.nodeStrong}>Малый и средний бизнес</strong>
-              <div style={styles.nodeDesc}>Покупают по <strong>свободным ценам</strong>, которые формируются на основе ОРЭМ + сбытовая надбавка + тариф ТСО.</div>
-              <span style={{ ...styles.badge, ...styles.badgeGreen }}>Свободные цены</span>
-            </div>
-            <div style={{ ...styles.subgroupNode, borderLeft: '4px solid #3a5a8a' }}>
-              <strong style={styles.nodeStrong}>Крупные заводы и предприятия</strong>
-              <div style={styles.nodeDesc}>Могут покупать энергию как на РРЭ (у сбытовых компаний), так и напрямую на <strong>ОРЭМ</strong> (в зависимости от мощности).</div>
-              <span style={{ ...styles.badge, ...styles.badgePurple }}>Гибкий выбор</span>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 20, background: '#e9f0f7', borderRadius: 18, padding: '16px 20px', border: '1px solid #c8d9e9' }}>
-            <div style={{ fontWeight: 600, color: '#1a3a5e', fontSize: '0.95rem' }}>Цена для потребителя на РРЭ</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 20px', marginTop: 8, fontSize: '0.9rem' }}>
-              <span><span style={{ opacity: 0.7 }}>1.</span> Нерегулируемая цена на ЭЭ <span style={{ opacity: 0.5 }}>(зависит от ОРЭМ)</span></span>
-              <span><span style={{ opacity: 0.7 }}>+</span> Тариф на передачу <span style={{ opacity: 0.5 }}>(ТСО)</span></span>
-              <span><span style={{ opacity: 0.7 }}>+</span> Сбытовая надбавка <span style={{ opacity: 0.5 }}>(ГП / НЭСО)</span></span>
-            </div>
-            <div style={{ marginTop: 6, fontSize: '0.8rem', color: '#3a5a7a' }}>Для населения — регулируемый тариф (устанавливает государство).</div>
-          </div>
-        </div>
+        {/* Инфраструктура */}
+        <section style={{ ...s.col, ...s.colL4 }}>
+          <ColHead num={4} color="4" title="Инфраструктура" subtitle="обеспечивает работу рынков" />
+          <CardLink
+            title="НП «Совет рынка»"
+            desc="Регламенты ОРЭМ и договор присоединения (ДОП)"
+            pill="регулятор"
+            pillColor="gray"
+            href="https://np-sr.ru"
+          />
+          <CardLink
+            title="АО «СО ЕЭС»"
+            desc="Оперативно-диспетчерское управление"
+            pill="диспетчер"
+            pillColor="gray"
+            href="https://so-ups.ru"
+          />
+          <CardLink
+            title="ПАО «Россети»"
+            desc="Магистральные и распределительные сети"
+            pill="сети"
+            pillColor="gray"
+            href="https://rosseti.ru"
+          />
+        </section>
 
       </div>
     </div>

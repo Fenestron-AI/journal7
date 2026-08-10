@@ -61,25 +61,25 @@ def is_paused():
 def _reset_stuck():
     conn = _connect()
     cur = conn.cursor()
-    cur.execute("UPDATE ai.documents SET status = 'MISSING' WHERE canonical = TRUE AND status = 'DOWNLOADING'")
+    cur.execute("UPDATE ai.documents SET download_state = NULL WHERE download_state = 'downloading'")
     count = cur.rowcount
     conn.commit()
     cur.close()
     conn.close()
     if count:
-        logger.info("Reset %d stuck DOWNLOADING → MISSING", count)
+        logger.info("Reset %d stuck downloading", count)
 
 
-def _mark_downloaded(doc_id: str, filepath: str):
+def _mark_downloaded(doc_id: str, filepath: str, source: str):
     conn = _connect()
     cur = conn.cursor()
-    cur.execute("UPDATE ai.documents SET status = 'DOWNLOADED', file_path = %s WHERE id = %s", (filepath, doc_id))
+    cur.execute("UPDATE ai.documents SET status = 'TRACKED', download_state = 'downloaded', file_path = %s, source = %s WHERE id = %s", (filepath, source, doc_id))
     conn.commit()
     cur.close()
     conn.close()
 
 
-def _download_one(doc_id: str, doc_num: str, url: str, filename: str, dest: Path) -> bool:
+def _download_one(doc_id: str, doc_num: str, url: str, filename: str, dest: Path, source: str) -> bool:
     for attempt in range(MAX_RETRIES):
         try:
             _rate_limit()
@@ -92,12 +92,12 @@ def _download_one(doc_id: str, doc_num: str, url: str, filename: str, dest: Path
                         f.write(chunk)
                         downloaded += len(chunk)
                 logger.info("[%s] OK: %dKB", doc_num, downloaded // 1024)
-            _mark_downloaded(doc_id, str(dest))
+            _mark_downloaded(doc_id, str(dest), source)
             return True
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 logger.warning("[%s] 404 Not Found (skip)", doc_num)
-                set_document_status(doc_id, "ERROR")
+                set_document_status(doc_id, "TRACKED", download_state="error")
                 return False
             logger.warning("[%s] HTTP %d (att %d)", doc_num, e.response.status_code, attempt + 1)
         except Exception as e:
@@ -109,33 +109,40 @@ def _download_one(doc_id: str, doc_num: str, url: str, filename: str, dest: Path
             logger.info("[%s] Retry in %ds...", doc_num, delay)
             time.sleep(delay)
             _paused.wait()
-    set_document_status(doc_id, "ERROR")
+    set_document_status(doc_id, "TRACKED", download_state="error")
     return False
 
 
 def validate_files():
-    """Check all DOWNLOADED docs, mark missing ones as MISSING. Safe to call anytime."""
+    """Check all docs with download_state='downloaded', mark missing files."""
     conn = _connect()
-    outdir = Path(settings.watch_dir)
+    root = Path(settings.watch_dir)
     cur = conn.cursor()
     try:
-        cur.execute("SELECT id, doc_number, file_path, metadata FROM ai.documents WHERE canonical = TRUE AND status = 'DOWNLOADED'")
-        for doc_id, doc_num, file_path, meta_str in cur.fetchall():
+        cur.execute("SELECT id, doc_number, file_path, metadata, source FROM ai.documents WHERE download_state = 'downloaded'")
+        for doc_id, doc_num, file_path, meta_str, db_source in cur.fetchall():
             exists = False
             if file_path and Path(file_path).exists():
                 exists = True
             if not exists and meta_str:
                 try:
                     meta = json.loads(meta_str) if isinstance(meta_str, str) else (meta_str or {})
-                    url = meta.get("url", "")
-                    fname = url.rsplit('/', 1)[-1] if url else ""
-                    if fname and (outdir / fname).exists():
-                        exists = True
+                    src = meta.get("source") or db_source or "so-ups"
+                    preferred = meta.get("preferred_url") or meta.get("url", "")
+                    fname = preferred.rsplit('/', 1)[-1] if preferred else ""
+                    if fname:
+                        for fmt_url in meta.get("formats", {}).values():
+                            fn = fmt_url.rsplit('/', 1)[-1] if isinstance(fmt_url, str) else ""
+                            if fn and (root / src / fn).exists():
+                                exists = True
+                                break
+                        if not exists and (root / src / fname).exists():
+                            exists = True
                 except Exception:
                     pass
             if not exists:
                 c2 = conn.cursor()
-                c2.execute("UPDATE ai.documents SET status = 'MISSING' WHERE id = %s", (doc_id,))
+                c2.execute("UPDATE ai.documents SET download_state = NULL WHERE id = %s", (doc_id,))
                 c2.close()
         conn.commit()
     finally:
@@ -146,36 +153,38 @@ def validate_files():
 def download_all():
     _reset_stuck()
 
-    outdir = Path(settings.watch_dir)
-    outdir.mkdir(parents=True, exist_ok=True)
+    root = Path(settings.watch_dir)
+    root.mkdir(parents=True, exist_ok=True)
     conn = _connect()
     cur = conn.cursor()
 
-    # Validate: mark DOWNLOADED docs as MISSING if file doesn't exist
-    cur.execute("SELECT id, doc_number, metadata, file_path FROM ai.documents WHERE canonical = TRUE AND status = 'DOWNLOADED'")
+    # Validate: mark TRACKED+downloaded docs as no-download-state if file doesn't exist
+    cur.execute("SELECT id, doc_number, metadata, file_path FROM ai.documents WHERE download_state = 'downloaded'")
     for doc_id, doc_num, meta_str, file_path in cur.fetchall():
         if file_path:
             dest = Path(file_path)
         else:
-            # fallback: extract filename from metadata URL
             try:
                 meta = json.loads(meta_str) if isinstance(meta_str, str) else meta_str or {}
-                url = meta.get("url", "")
+                url = meta.get("preferred_url") or meta.get("url", "")
+                src = meta.get("source") or "so-ups"
                 fname = url.rsplit('/', 1)[-1] if url else f"{doc_num.replace('/','_').replace(' ','_')}.pdf"
             except Exception:
                 fname = f"{doc_num.replace('/','_').replace(' ','_')}.pdf"
-            dest = outdir / fname
+                src = "so-ups"
+            dest = root / src / fname
         if not dest.exists() or dest.stat().st_size < 1000:
             cur2 = conn.cursor()
-            cur2.execute("UPDATE ai.documents SET status = 'MISSING' WHERE id = %s", (doc_id,))
+            cur2.execute("UPDATE ai.documents SET download_state = NULL WHERE id = %s", (doc_id,))
             cur2.close()
     conn.commit()
 
-    # Get MISSING docs to download
+    # Get TRACKED docs with no download_state to download
     cur.execute(
-        "SELECT id, doc_number, metadata FROM ai.documents "
-        "WHERE canonical = TRUE AND status = 'MISSING' AND metadata::jsonb->>'url' IS NOT NULL "
-        "ORDER BY metadata::jsonb->>'priority' DESC, doc_date"
+        "SELECT d.id, d.doc_number, d.metadata, d.source FROM ai.documents d "
+        "WHERE d.status = 'TRACKED' AND (d.download_state IS NULL OR d.download_state = 'error') "
+        "AND (d.metadata::jsonb->>'preferred_url' IS NOT NULL OR d.source_url IS NOT NULL) "
+        "ORDER BY d.metadata::jsonb->>'priority' DESC, d.doc_date"
     )
     rows = cur.fetchall()
     cur.close()
@@ -188,20 +197,21 @@ def download_all():
     logger.info("Download %d documents (%d workers)", len(rows), WORKERS)
 
     q: queue.Queue = queue.Queue()
-    for doc_id, doc_num, meta_str in rows:
+    for doc_id, doc_num, meta_str, db_source in rows:
         try:
             meta = json.loads(meta_str)
         except Exception:
             meta = {}
-        url = meta.get("url", "")
+        url = meta.get("preferred_url") or meta.get("url") or ""
         if not url:
             continue
+        source = meta.get("source") or db_source or "so-ups"
+        outdir = root / source
+        outdir.mkdir(parents=True, exist_ok=True)
         filename = url.rsplit('/', 1)[-1] if '/' in url else f"{doc_num}.pdf"
-        if not filename.lower().endswith('.pdf'):
-            filename += '.pdf'
         dest = outdir / filename
-        set_document_status(doc_id, "DOWNLOADING")
-        q.put((doc_id, doc_num, url, filename, dest))
+        set_document_status(doc_id, "TRACKED", download_state="downloading")
+        q.put((doc_id, doc_num, url, filename, dest, source))
 
     success = 0
     failed = 0
@@ -215,8 +225,8 @@ def download_all():
                 task = q.get_nowait()
             except queue.Empty:
                 break
-            doc_id, doc_num, url, filename, dest = task
-            if _download_one(doc_id, doc_num, url, filename, dest):
+            doc_id, doc_num, url, filename, dest, source = task
+            if _download_one(doc_id, doc_num, url, filename, dest, source):
                 with lock:
                     success += 1
             else:

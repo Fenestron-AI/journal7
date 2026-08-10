@@ -1,10 +1,8 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Button, Typography, Tooltip } from 'antd';
-import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined, RobotOutlined, BookOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { Badge } from 'antd';
+import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined, RobotOutlined, BookOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { useEffect, useState } from 'react';
-import api from '../api/client';
 
 const { Sider, Content, Header } = Layout;
 
@@ -22,7 +20,6 @@ export default function AppLayout() {
   const location = useLocation();
   const { user, fetchUser, logout } = useAuthStore();
   const [collapsed, setCollapsed] = usePersistedState('j7-sider-collapsed', false);
-  const [aiActivity, setAiActivity] = useState(0);
 
   const menuItems = [
     { key: '/', icon: <DashboardOutlined />, label: 'Дашборд' },
@@ -34,25 +31,11 @@ export default function AppLayout() {
     { key: '/ai', icon: <RobotOutlined />, label: 'AI-агент' },
     {
       key: '/ai/documents', icon: <BookOutlined />,
-      label: collapsed ? (
-        <Badge count={aiActivity} size="small" offset={[6, -6]}>Норм. база</Badge>
-      ) : (
-        <span>Норм. база {aiActivity > 0 && <Badge count={aiActivity} size="small" style={{ marginLeft: 8 }} />}</span>
-      )
+      label: 'Нормативная база',
     },
   ];
 
   useEffect(() => { if (!user) fetchUser(); }, []);
-
-  // Poll AI activity count
-  useEffect(() => {
-    const poll = () => {
-      api.get('/ai/activity').then(r => setAiActivity(r.data?.count || 0)).catch(() => {});
-    };
-    poll();
-    const timer = setInterval(poll, 30000);
-    return () => clearInterval(timer);
-  }, []);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>

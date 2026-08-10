@@ -21,8 +21,8 @@ fun Route.aiRoutes() {
     route("/api/v1/ai") {
         // --- Sync ---
         post("sync") {
-            val ok = workerClient.downloadAll()
-            call.respond(mapOf("started" to ok))
+            val json = workerClient.syncSource()
+            call.respondText(json, ContentType.Application.Json)
         }
 
         post("sync/pause") {
@@ -35,13 +35,55 @@ fun Route.aiRoutes() {
             call.respond(mapOf("resumed" to ok))
         }
 
+        post("upload") {
+            val resp = workerClient.uploadFile(call)
+            call.respondText(resp, ContentType.Application.Json)
+        }
+
+        post("documents/batch-delete") {
+            val payload = call.receiveText()
+            val resp = workerClient.batchDelete(payload)
+            call.respondText(resp, ContentType.Application.Json)
+        }
+
+        post("documents/{id}/pin") {
+            val id = call.parameters["id"]!!
+            val resp = workerClient.pinDocument(id)
+            call.respondText(resp, ContentType.Application.Json)
+        }
+
         get("sync/status") {
             call.respond(mapOf("paused" to workerClient.downloadStatus()))
         }
 
+        // --- Sources ---
+        get("sources") {
+            val json = workerClient.getSources()
+            call.respondText(json, ContentType.Application.Json)
+        }
+
+        post("sources") {
+            val payload = call.receiveText()
+            workerClient.createSource(payload)
+            call.respond(mapOf("created" to true))
+        }
+
+        put("sources/{id}") {
+            val id = call.parameters["id"]!!
+            val payload = call.receiveText()
+            workerClient.updateSource(id, payload)
+            call.respond(mapOf("updated" to true))
+        }
+
+        delete("sources/{id}") {
+            val id = call.parameters["id"]!!
+            workerClient.deleteSource(id)
+            call.respond(mapOf("deleted" to true))
+        }
+
         get("activity") {
             val docs = aiService.listDocuments(null)
-            val count = docs.count { it.status in setOf(DocumentStatus.MISSING, DocumentStatus.PROCESSING, DocumentStatus.ERROR, DocumentStatus.DOWNLOADING) }
+            val count = docs.count { it.status == DocumentStatus.TRACKED && it.downloadState in setOf("downloading", "error") || it.processingState == "processing" }
             call.respond(mapOf("count" to count))
         }
         // --- Documents ---
@@ -98,6 +140,34 @@ fun Route.aiRoutes() {
             call.respond(mapOf("worker" to aiService.workerHealthy()))
         }
 
+        // --- File serving ---
+        get("files/{filename}") {
+            val filename = call.parameters["filename"]!!
+            val base = File("/home/fenestron/Developer/journal7/data/legal-docs")
+            if (!base.exists()) {
+                call.respond(HttpStatusCode.NotFound, "Base directory not found")
+                return@get
+            }
+            for (dir in base.listFiles() ?: emptyArray()) {
+                if (!dir.isDirectory) continue
+                val file = File(dir, filename)
+                if (file.exists() && file.isFile) {
+                    val contentType = when (file.extension.lowercase()) {
+                        "pdf" -> ContentType.Application.Pdf
+                        "docx" -> ContentType.Application.Zip // docx as octet-stream for download
+                        "odt" -> ContentType.Application.Zip
+                        "rtf" -> ContentType.Text.Plain
+                        "doc" -> ContentType.Application.Zip
+                        else -> ContentType.Application.OctetStream
+                    }
+                    call.response.header("Content-Disposition", "inline; filename=\"${file.name}\"")
+                    call.respondFile(file)
+                    return@get
+                }
+            }
+            call.respond(HttpStatusCode.NotFound, "File not found: $filename")
+        }
+
         // --- Notifications ---
         get("notifications") {
             val read = call.request.queryParameters["read"]?.toBooleanStrictOrNull()
@@ -119,10 +189,15 @@ private fun LegalDocument.toResponse() = DocumentResponse(
     docDate = docDate,
     revision = revision,
     docType = docType,
+    docCategory = docCategory,
+    syncInterval = syncInterval,
     status = status.name,
+    downloadState = downloadState,
+    processingState = processingState,
+    priority = priority,
+    pinned = pinned,
     filePath = filePath,
     chunkCount = chunkCount,
-    canonical = canonical,
     originalFilename = originalFilename,
     fileSize = fileSize,
     source = source,

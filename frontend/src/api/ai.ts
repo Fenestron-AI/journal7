@@ -7,15 +7,46 @@ export interface LegalDocumentResponse {
   docDate?: string;
   revision?: string;
   docType: string;
+  docCategory?: string;
+  syncInterval?: string;
   status: string;
+  downloadState?: string;
+  processingState?: string;
+  priority?: string;
+  pinned?: boolean;
   filePath?: string;
   chunkCount: number;
-  canonical: boolean;
   originalFilename?: string;
   fileSize: number;
   source: string;
   sourceUrl?: string;
   metadata: Record<string, string>;
+}
+
+export interface SourceResponse {
+  id: string;
+  name: string;
+  url: string;
+  sync_strategy: string;
+  doc_group: string;
+  sync_interval: string;
+  active: boolean;
+  status: string;
+  last_synced_at: number;
+}
+
+export interface SyncResponse {
+  sources_synced?: number;
+  details?: SyncDetail[];
+}
+
+export interface SyncDetail {
+  name: string;
+  url: string;
+  new?: number;
+  updated?: number;
+  archived?: number;
+  error?: string;
 }
 
 export interface SourceRefDto {
@@ -60,6 +91,16 @@ export const aiApi = {
     api.post('/ai/sync/resume').then(r => r.data),
   getSyncStatus: () =>
     api.get<{ paused: boolean }>('/ai/sync/status').then(r => r.data),
+  listSources: () =>
+    api.get<SourceResponse[]>('/ai/sources').then(r => r.data),
+  createSource: (data: { name: string; url: string; doc_group?: string; sync_interval?: string }) =>
+    api.post('/ai/sources', data).then(r => r.data),
+  updateSource: (id: string, data: Record<string, unknown>) =>
+    api.put(`/ai/sources/${id}`, data).then(r => r.data),
+  deleteSource: (id: string) =>
+    api.delete(`/ai/sources/${id}`),
+  syncSource: (sourceId?: string) =>
+    api.post('/ai/sync', sourceId ? { source_id: sourceId } : {}).then(r => r.data),
   activity: () =>
     api.get<{ count: number }>('/ai/activity').then(r => r.data),
   refresh: () =>

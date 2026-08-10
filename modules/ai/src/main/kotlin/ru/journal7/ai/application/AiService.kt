@@ -31,43 +31,40 @@ class AiService(
         val parsed = parseDocumentMetadata(file.name)
         val hash = sha256(file)
 
-        // 1. Try to match with canonical document by doc_number
         if (parsed.number != null) {
             val allDocs = repository.listDocuments(null)
-            val canonical = allDocs.firstOrNull {
-                it.docNumber == parsed.number && it.canonical && it.status != DocumentStatus.ACTIVE
+            val matched = allDocs.firstOrNull {
+                it.docNumber == parsed.number && it.status != DocumentStatus.INGESTED
             }
-            if (canonical != null) {
-                val updated = canonical.copy(
-                    title = parsed.title ?: canonical.title,
-                    revision = parsed.revision ?: canonical.revision,
-                    docDate = parsed.date ?: canonical.docDate,
+            if (matched != null) {
+                val updated = matched.copy(
+                    title = parsed.title ?: matched.title,
+                    revision = parsed.revision ?: matched.revision,
+                    docDate = parsed.date ?: matched.docDate,
                     filePath = file.absolutePath,
                     fileHash = hash,
-                    status = DocumentStatus.PROCESSING,
+                    status = DocumentStatus.TRACKED,
+                    processingState = "processing",
                 )
                 return repository.updateDocument(updated)
             }
         }
 
-        // 2. Check existing non-canonical by doc_number + revision
         val existing = repository.findDocumentByNumberAndRevision(parsed.number ?: file.name, parsed.revision)
-        if (existing != null && !existing.canonical) {
+        if (existing != null) {
             if (existing.fileHash == hash) return existing
-            val updated = existing.copy(filePath = file.absolutePath, fileHash = hash, status = DocumentStatus.PROCESSING)
+            val updated = existing.copy(filePath = file.absolutePath, fileHash = hash, status = DocumentStatus.TRACKED, processingState = "processing")
             return repository.updateDocument(updated)
         }
 
-        // 3. Supersede older revision
         if (parsed.number != null) {
             val older = repository.listDocuments(null)
-                .firstOrNull { it.docNumber == parsed.number && it.status == DocumentStatus.ACTIVE && !it.canonical }
+                .firstOrNull { it.docNumber == parsed.number && it.status == DocumentStatus.INGESTED }
             if (older != null) {
-                repository.setDocumentStatus(older.id, DocumentStatus.OUTDATED)
+                repository.setDocumentStatus(older.id, DocumentStatus.ARCHIVED)
             }
         }
 
-        // 4. Create new non-canonical document
         val doc = LegalDocument(
             id = java.util.UUID.randomUUID(),
             title = parsed.title ?: file.name,
@@ -75,7 +72,8 @@ class AiService(
             docDate = parsed.date,
             revision = parsed.revision,
             docType = parsed.type ?: "НПА",
-            status = DocumentStatus.PROCESSING,
+            status = DocumentStatus.TRACKED,
+            processingState = "processing",
             filePath = file.absolutePath,
             fileHash = hash,
             metadata = mapOf("filename" to file.name),
@@ -114,18 +112,18 @@ class AiService(
 
         // Trigger worker ingestion
         try {
-            repository.setDocumentStatus(id, DocumentStatus.PROCESSING)
+            repository.setDocumentStatus(id, DocumentStatus.TRACKED)
             worker.ingest(id.toString(), doc.filePath)
         } catch (e: Exception) {
-            repository.setDocumentStatus(id, DocumentStatus.ERROR)
+            repository.setDocumentStatus(id, DocumentStatus.TRACKED)
             throw e
         }
     }
 
     suspend fun cancelIngest(id: UUID) {
         val doc = repository.findDocumentById(id) ?: throw DocumentNotFound()
-        if (doc.status == DocumentStatus.PROCESSING) {
-            repository.setDocumentStatus(id, DocumentStatus.ACTIVE)
+        if (doc.processingState == "processing") {
+            repository.setDocumentStatus(id, DocumentStatus.TRACKED)
         }
     }
 

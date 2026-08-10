@@ -33,14 +33,25 @@ def get_document(doc_id: str) -> dict | None:
         conn.close()
 
 
-def set_document_status(doc_id: str, status: str, chunk_count: int = 0):
+def set_document_status(doc_id: str, status: str, chunk_count: int = 0, download_state: str | None = None, processing_state: str | None = None):
     conn = _connect()
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                "UPDATE ai.documents SET status = %s, chunk_count = %s WHERE id = %s",
-                (status, chunk_count, doc_id),
-            )
+            if download_state is not None:
+                cur.execute(
+                    "UPDATE ai.documents SET status = %s, chunk_count = %s, download_state = %s WHERE id = %s",
+                    (status, chunk_count, download_state, doc_id),
+                )
+            elif processing_state is not None:
+                cur.execute(
+                    "UPDATE ai.documents SET status = %s, chunk_count = %s, processing_state = %s WHERE id = %s",
+                    (status, chunk_count, processing_state, doc_id),
+                )
+            else:
+                cur.execute(
+                    "UPDATE ai.documents SET status = %s, chunk_count = %s WHERE id = %s",
+                    (status, chunk_count, doc_id),
+                )
     finally:
         conn.close()
 
@@ -95,7 +106,7 @@ def search(query_embedding: list[float], limit: int) -> list[dict]:
                 FROM ai.chunks c
                 JOIN ai.documents d ON d.id = c.document_id
                 WHERE c.embedding IS NOT NULL
-                  AND d.status = 'ACTIVE'
+                  AND d.status = 'INGESTED'
                 ORDER BY c.embedding <=> %s::vector
                 LIMIT %s
                 """,

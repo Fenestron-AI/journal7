@@ -102,6 +102,14 @@ body {
   user-select: none;
 }
 
+.ant-modal-content:focus,
+.ant-modal-content:focus-visible,
+.ant-modal-close:focus,
+.ant-modal-close:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 h1,
 h2 {
   font-family: var(--heading);
