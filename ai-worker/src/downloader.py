@@ -32,6 +32,8 @@ DELAY_BETWEEN = 3.0
 
 _request_lock = threading.Lock()
 _next_request = 0.0
+_paused = threading.Event()
+_paused.set()  # not paused by default
 
 
 def _rate_limit():
@@ -40,8 +42,20 @@ def _rate_limit():
         now = time.time()
         wait = _next_request - now
         if wait > 0:
-            time.sleep(wait)
+            time.sleep(min(wait, 1.0))  # check pause every 1s
         _next_request = time.time() + DELAY_BETWEEN
+
+
+def pause():
+    _paused.clear()
+
+
+def resume():
+    _paused.set()
+
+
+def is_paused():
+    return not _paused.is_set()
 
 
 def _reset_stuck():
@@ -94,29 +108,70 @@ def _download_one(doc_id: str, doc_num: str, url: str, filename: str, dest: Path
             delay = RETRY_DELAYS[attempt]
             logger.info("[%s] Retry in %ds...", doc_num, delay)
             time.sleep(delay)
+            _paused.wait()
     set_document_status(doc_id, "ERROR")
     return False
+
+
+def validate_files():
+    """Check all DOWNLOADED docs, mark missing ones as MISSING. Safe to call anytime."""
+    conn = _connect()
+    outdir = Path(settings.watch_dir)
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT id, doc_number, file_path, metadata FROM ai.documents WHERE canonical = TRUE AND status = 'DOWNLOADED'")
+        for doc_id, doc_num, file_path, meta_str in cur.fetchall():
+            exists = False
+            if file_path and Path(file_path).exists():
+                exists = True
+            if not exists and meta_str:
+                try:
+                    meta = json.loads(meta_str) if isinstance(meta_str, str) else (meta_str or {})
+                    url = meta.get("url", "")
+                    fname = url.rsplit('/', 1)[-1] if url else ""
+                    if fname and (outdir / fname).exists():
+                        exists = True
+                except Exception:
+                    pass
+            if not exists:
+                c2 = conn.cursor()
+                c2.execute("UPDATE ai.documents SET status = 'MISSING' WHERE id = %s", (doc_id,))
+                c2.close()
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
 
 
 def download_all():
     _reset_stuck()
 
-    # Skip already-downloaded with valid files
     outdir = Path(settings.watch_dir)
     outdir.mkdir(parents=True, exist_ok=True)
     conn = _connect()
     cur = conn.cursor()
-    cur.execute("SELECT id, doc_number FROM ai.documents WHERE canonical = TRUE AND status = 'DOWNLOADED'")
-    for doc_id, doc_num in cur.fetchall():
-        dest = outdir / f"{doc_num.replace('/','_').replace(' ','_')}.pdf"
+
+    # Validate: mark DOWNLOADED docs as MISSING if file doesn't exist
+    cur.execute("SELECT id, doc_number, metadata, file_path FROM ai.documents WHERE canonical = TRUE AND status = 'DOWNLOADED'")
+    for doc_id, doc_num, meta_str, file_path in cur.fetchall():
+        if file_path:
+            dest = Path(file_path)
+        else:
+            # fallback: extract filename from metadata URL
+            try:
+                meta = json.loads(meta_str) if isinstance(meta_str, str) else meta_str or {}
+                url = meta.get("url", "")
+                fname = url.rsplit('/', 1)[-1] if url else f"{doc_num.replace('/','_').replace(' ','_')}.pdf"
+            except Exception:
+                fname = f"{doc_num.replace('/','_').replace(' ','_')}.pdf"
+            dest = outdir / fname
         if not dest.exists() or dest.stat().st_size < 1000:
             cur2 = conn.cursor()
             cur2.execute("UPDATE ai.documents SET status = 'MISSING' WHERE id = %s", (doc_id,))
             cur2.close()
-            conn.commit()
     conn.commit()
 
-    # Get MISSING docs
+    # Get MISSING docs to download
     cur.execute(
         "SELECT id, doc_number, metadata FROM ai.documents "
         "WHERE canonical = TRUE AND status = 'MISSING' AND metadata::jsonb->>'url' IS NOT NULL "
@@ -141,7 +196,9 @@ def download_all():
         url = meta.get("url", "")
         if not url:
             continue
-        filename = f"{doc_num.replace('/','_').replace(' ','_')}.pdf"
+        filename = url.rsplit('/', 1)[-1] if '/' in url else f"{doc_num}.pdf"
+        if not filename.lower().endswith('.pdf'):
+            filename += '.pdf'
         dest = outdir / filename
         set_document_status(doc_id, "DOWNLOADING")
         q.put((doc_id, doc_num, url, filename, dest))
@@ -153,6 +210,7 @@ def download_all():
     def worker():
         nonlocal success, failed
         while not q.empty():
+            _paused.wait()
             try:
                 task = q.get_nowait()
             except queue.Empty:
@@ -172,8 +230,22 @@ def download_all():
         t.start()
         threads.append(t)
 
+    # Background validation thread (runs regardless of pause)
+    stop_validate = threading.Event()
+    def validator():
+        while not stop_validate.wait(10):  # every 10 seconds
+            try:
+                validate_files()
+            except Exception:
+                pass
+    vt = threading.Thread(target=validator, daemon=True)
+    vt.start()
+
     for t in threads:
         t.join()
+
+    stop_validate.set()
+    validate_files()  # final pass
 
     logger.info("Done: %d OK, %d failed", success, failed)
     return {"total": len(rows), "downloaded": success, "failed": failed}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Иконки «Обучить»</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #fff; padding: 40px 48px; color: rgba(0,0,0,0.85); }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
+  .list { display: flex; flex-direction: column; max-width: 600px; }
+  .row { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; gap: 16px; }
+  .row:hover { background: #fafafa; margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: 4px; }
+  .btn {
+    width: 24px; height: 24px; border-radius: 50%; border: 1px solid #d9d9d9; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; color: #595959;
+  }
+  .name { font-size: 14px; font-weight: 500; color: rgba(0,0,0,0.85); }
+  .code { font-size: 11px; color: #999; }
+  svg { width: 14px; height: 14px; }
+</style>
+</head>
+<body>
+
+<h1>Обучить AI-агента — варианты значка</h1>
+
+<div class="list" id="list"></div>
+
+<script>
+const icons = [
+  { name:"Молния", code:"ThunderboltOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>` },
+  { name:"Лампочка", code:"BulbOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>` },
+  { name:"Эксперимент", code:"ExperimentOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v5l-6 8h16l-6-8V3"/></svg>` },
+  { name:"Ракета", code:"RocketOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.88 1.88-3 4.5-3 5.5 1 0 3.62-1.12 5.5-3a3 3 0 1 0-2.5-2.5z"/><path d="M12 8l-3-3 3-3h8v8l-3 3-3-3h-2zm3 3l3 3"/></svg>` },
+  { name:"Читать", code:"ReadOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>` },
+  { name:"Сеть/узел", code:"NodeIndexOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="12" r="3"/><circle cx="6" cy="18" r="3"/><line x1="8.5" y1="7.5" x2="15" y2="11.5"/><line x1="8.5" y1="16.5" x2="15" y2="12.5"/></svg>` },
+  { name:"Звезда", code:"StarOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` },
+  { name:"Мозг/ИИ", code:"RobotOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/><circle cx="15.5" cy="9.5" r="1.5"/><path d="M8.5 14a3.5 3.5 0 0 0 7 0"/><rect x="9" y="17" width="2" height="3"/><rect x="13" y="17" width="2" height="3"/></svg>` },
+  { name:"Атом", code:"AtomOutlined",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><path d="M20.2 20.2c2.04-2.03.02-12.08-4.5-8.08-3.66 3.24-7.31 5.84-4.13 9.07 2.4 2.44 6.07.47 8.63-1zm-16.4 0c-2.04-2.03-.02-12.08 4.5-8.08 3.66 3.24 7.31 5.84 4.13 9.07-2.4 2.44-6.07.47-8.63-1z"/><path d="M12 2.5v1"/><path d="M12 21.5v-1"/></svg>` },
+  { name:"Шляпа выпускника", code:"custom",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M2 10v6c0 4 5 4 10 0"/><path d="M22 10v6c0 4-5 4-10 0"/><polyline points="6 12.5 12 15.5 18 12.5"/></svg>` },
+];
+
+icons.forEach((icon, i) => {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <div class="btn">${icon.svg}</div>
+    <span class="name">${icon.name}</span>
+    <span class="code">&lt;${icon.code} /&gt;</span>
+  `;
+  list.appendChild(row);
+});
+</script>
+</body>
+</html>

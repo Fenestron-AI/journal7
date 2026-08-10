@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from config import settings
 from db import delete_chunks, get_document, insert_chunks, set_document_status, store_embedding
-from downloader import download_all
+from downloader import download_all, pause, resume, is_paused
 from ingestion import chunk_text, extract_text
 from qa import ask
 from yandex import embed
@@ -81,10 +81,38 @@ def _ingest(document_id: str, file_path: str) -> dict:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("AI worker started. Yandex configured: %s", bool(settings.yandex_api_key))
-    # Auto-resume downloads in background
     import threading
-    threading.Thread(target=download_all, daemon=True).start()
+    def _safe_download():
+        try:
+            download_all()
+        except Exception as e:
+            logger.error("download_all crashed: %s", e, exc_info=True)
+    threading.Thread(target=_safe_download, daemon=True).start()
+
+    # Continuous file validator (5s active, 30s idle)
+    from downloader import validate_files
+    stop_validator = threading.Event()
+    def _validator_loop():
+        while not stop_validator.is_set():
+            try:
+                validate_files()
+            except Exception:
+                pass
+            import psycopg2
+            try:
+                conn = psycopg2.connect(settings.database_url)
+                cur = conn.cursor()
+                cur.execute("SELECT count(*) FROM ai.documents WHERE canonical = TRUE AND status IN ('DOWNLOADING','MISSING')")
+                active = cur.fetchone()[0] > 0
+                cur.close()
+                conn.close()
+            except Exception:
+                active = False
+            stop_validator.wait(5 if active else 30)
+    threading.Thread(target=_validator_loop, daemon=True).start()
+
     yield
+    stop_validator.set()
     logger.info("AI worker stopped")
 
 
@@ -111,9 +139,10 @@ async def ingest(req: IngestRequest):
 
 @app.post("/download")
 async def download_docs():
-    """Download all MISSING canonical documents from so-ups.ru."""
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, download_all)
+    """Start download of all MISSING canonical documents in background."""
+    import threading
+    threading.Thread(target=download_all, daemon=True).start()
+    return {"started": True}
 
 
 @app.get("/download/progress")
@@ -130,7 +159,24 @@ async def download_progress():
     statuses = {r[0]: r[1] for r in cur.fetchall()}
     cur.close()
     conn.close()
-    return {"total": 74, "statuses": statuses}
+    return {"total": 74, "statuses": statuses, "paused": is_paused()}
+
+
+@app.post("/download/pause")
+async def pause_download():
+    pause()
+    return {"status": "paused"}
+
+
+@app.post("/download/resume")
+async def resume_download():
+    resume()
+    return {"status": "resumed"}
+
+
+@app.get("/download/status")
+async def download_status():
+    return {"paused": is_paused()}
 
 
 @app.post("/ask")

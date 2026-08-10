@@ -74,6 +74,7 @@ body {
 [class*="ant-layout-sider"] {
   border-inline-end: none !important;
   border-right: none !important;
+  user-select: none;
 }
 
 .ant-menu-inline {
@@ -83,6 +84,7 @@ body {
 
 .j7-collapsed-menu-item {
   transition: none !important;
+  user-select: none;
 }
 
 .j7-collapsed-menu-item:hover {
@@ -92,10 +94,12 @@ body {
 .ant-menu-inline .ant-menu-item,
 .ant-menu-inline .ant-menu-item > span {
   transition: none !important;
+  user-select: none;
 }
 
 .ant-menu-item {
   transition: none !important;
+  user-select: none;
 }
 
 h1,

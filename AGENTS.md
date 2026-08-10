@@ -275,14 +275,36 @@ In Omega, to create a contract you had to: open counterparty form → save → o
 
 ## Session 2026-08-09: Runtime Notes
 
-### Services (running manually, no Docker)
-- **PostgreSQL 16**: `pg_ctl -D data/pgdata -l data/pg.log start`  
-  Binary extracted from `.deb` packages in `/tmp/pg-extract/usr/lib/postgresql/16/`.
-  Port 5432.
-- **Backend**: `./gradlew :app:run` (port 8080)
-- **Frontend**: `setsid -f bash -c 'cd frontend && exec npx vite --host 0.0.0.0 --port 5173' &>/tmp/frontend.log`
-- **Worker**: `setsid -f bash -c 'cd ai-worker && exec env PYTHONPATH=src ./venv/bin/python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8000' &>/tmp/ai-worker.log`
-- **Login**: admin / admin123
+### Startup (one command)
+```bash
+./start.sh
+```
+This script handles Docker, waits for DB, and starts backend + frontend + worker in background.
+Logs: `/tmp/backend.log`, `/tmp/frontend.log`, `/tmp/ai-worker.log`.
+
+### Restart individual services (DO NOT USE pkill -f "journal7" — kills all!)
+```bash
+# Backend only:
+nohup bash -c './gradlew :app:run' &>/tmp/backend.log & disown
+
+# Frontend only:
+nohup bash -c 'cd frontend && npx vite --host 0.0.0.0 --port 5173' &>/tmp/frontend.log & disown
+
+### AI Worker (must use setsid to survive bash tool timeouts)
+```bash
+# Kill any existing worker on port 8000:
+fuser -k 8000/tcp
+
+# Start with setsid (CRITICAL: nohup & alone gets killed on bash timeout):
+setsid bash -c 'cd /home/fenestron/Developer/journal7/ai-worker && exec env PYTHONPATH=src ./venv/bin/python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8000' </dev/null &>/tmp/ai-worker.log & disown; exit 0
+```
+
+### Key findings 2026-08-10
+- **Downloader**: saves files with original names from URL (e.g., `reg114-091109.pdf`), not mangled doc_number
+- **Validator**: runs continuously in lifespan — 5s when active (MISSING/DOWNLOADING), 30s when idle. Catches deleted files
+- **Sync button**: green checkmark + «Синхронизировано» when idle, arrows spin when active, pause icon when paused
+- **Flyway**: V1 migration has `'admin'` role (lowercase) — DB fixed manually to `'ADMIN'`. Do NOT change V1 SQL (checksum mismatch)
+- **docker-compose**: image changed from `postgres:16-alpine` to `pgvector/pgvector:pg16` for pgvector extension
 
 ### AI / Legal Knowledge Base
 - [x] pgvector 0.6.0 extension in PostgreSQL

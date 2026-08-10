@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Книга — 50 вариантов для «Обучить»</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #fff; padding: 40px 48px; color: rgba(0,0,0,0.85); }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; max-width: 1200px; }
+  .card { display: flex; align-items: center; padding: 8px 10px; gap: 10px; border-radius: 6px; }
+  .card:hover { background: #fafafa; }
+  .btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #595959; }
+  .n { font-size: 10px; color: #bbb; min-width: 18px; }
+  .name { font-size: 12px; color: rgba(0,0,0,0.85); }
+  svg { width: 18px; height: 18px; }
+</style>
+</head>
+<body>
+
+<h1>Книга — 50 вариантов для «Обучить»</h1>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const variants = [
+  // === 01-10: Classic outline books ===
+  { id:1, name:'Закрытая книга',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/><path d="M12 10v8"/></svg>` },
+  { id:2, name:'Закрытая жирная',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/></svg>` },
+  { id:3, name:'Закрытая с закладкой',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/><path d="M12 14l1.5 2 1.5-2v6"/></svg>` },
+  { id:4, name:'Закрытая + звёздочка',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/><polygon points="19,4 19.6,2.5 21,2 19.6,1.5 19,0 18.4,1.5 17,2 18.4,2.5" fill="currentColor"/></svg>` },
+  { id:5, name:'Закрытая — изогнутый корешок',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5h12c1 0 2 1 2 2v12H4V7c0-1 1-2 2-2z"/><path d="M4 19V7c0-2 1-2 2-2"/><path d="M7 7v12"/></svg>` },
+  { id:6, name:'Закрытая — твёрдая обложка',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><rect x="4" y="5" width="16" height="14" rx="0.5"/><line x1="12" y1="5" x2="12" y2="19"/></svg>` },
+  { id:7, name:'Раскрытая V-образ',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c-0.5 0-1 0.3-1 1v10c0 1 1 1.5 2 1.5h2l7-8 7 8h2c1 0 2-0.5 2-1.5v-10c0-0.7-0.5-1-1-1h-2l-7 8-7-8H4z"/><path d="M12 12v8"/></svg>` },
+  { id:8, name:'Раскрытая — страницы веером',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 7 8-7M4 4v14c0 1 0.5 2 1.5 2h2l4.5-5 4.5 5h2c1 0 1.5-1 1.5-2V4"/><line x1="12" y1="11" x2="12" y2="20"/></svg>` },
+  { id:9, name:'Раскрытая — с закладкой',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v10c0 1 1 1.5 2 1.5h2l6-8 6 8h2c1 0 2-0.5 2-1.5V6c0-0.7-0.5-1-1-1h-2l-6 8-6-8H4c-0.5 0-1 0.3-1 1z"/><path d="M12 12v8"/><path d="M12 15l1.5 2 1.5-2v5"/></svg>` },
+  { id:10, name:'Раскрытая с лучами',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="3"/><line x1="5" y1="3" x2="6.5" y2="4.5"/><line x1="19" y1="3" x2="17.5" y2="4.5"/><path d="M2 6v10c0 1 1 1.5 2 1.5h2l6-8 6 8h2c1 0 2-0.5 2-1.5V6c0-0.7-0.5-1-1-1h-2l-6 8-6-8H4c-0.5 0-1 0.3-1 1z"/><path d="M12 12v8"/></svg>` },
+
+  // === 11-20: Outline variations ===
+  { id:11, name:'Раскрытая — жирный контур',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v10c0 1 1 1.5 2 1.5h2l6-8 6 8h2c1 0 2-0.5 2-1.5V6c0-0.7-0.5-1-1-1h-2l-6 8-6-8H4c-0.5 0-1 0.3-1 1z"/><path d="M12 12v8"/></svg>` },
+  { id:12, name:'Раскрытая — пунктир',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v10c0 1 1 1.5 2 1.5h2l6-8 6 8h2c1 0 2-0.5 2-1.5V6c0-0.7-0.5-1-1-1h-2l-6 8-6-8H4c-0.5 0-1 0.3-1 1z"/><path d="M12 12v8"/></svg>` },
+  { id:13, name:'Раскрытая без корешка',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v9c0 1 1 1.5 2 1.5h2l6-7 6 7h2c1 0 2-0.5 2-1.5V6"/><line x1="4" y1="6" x2="20" y2="6"/></svg>` },
+  { id:14, name:'Закрытая — тонкий контур',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/></svg>` },
+  { id:15, name:'Одна линия — закрытая',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 3h16v18H4zM4 3l2-2h12l2 2"/></svg>` },
+  { id:16, name:'Одна линия — раскрытая',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 6v10c0 1 1 1.5 2 1.5h3l5-7 5 7h3c1 0 2-0.5 2-1.5V6H2z"/></svg>` },
+  { id:17, name:'Двойной контур',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v10c0 1 1 1.5 2 1.5h2l6-8 6 8h2c1 0 2-0.5 2-1.5V6c0-0.7-0.5-1-1-1h-2l-6 8-6-8H4c-0.5 0-1 0.3-1 1z"/><path d="M12 12v8"/><path d="M1 6v11c0 1.5 1.5 2 2.5 2h3" stroke-opacity="0.2"/><path d="M23 6v11c0 1.5-1.5 2-2.5 2h-3" stroke-opacity="0.2"/></svg>` },
+  { id:18, name:'Корешок слева',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4v16l5-8 5 8V4H5z"/><path d="M15 4v16"/></svg>` },
+  { id:19, name:'Книга с пером',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M17 3.5L15.5 6h3L17 3.5z"/></svg>` },
+  { id:20, name:'Книга + очки',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><circle cx="9" cy="10" r="2.5"/><circle cx="15" cy="10" r="2.5"/><path d="M11.5 10h1"/></svg>` },
+
+  // === 21-30: Filled ===
+  { id:21, name:'Заливка серая',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z" fill="#f0f0f0"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/></svg>` },
+  { id:22, name:'Заливка тёмная',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z" fill="#262626"/><path d="M4 6l2-3h12l2 3" stroke="#434343"/><path d="M6 6v14" stroke="#434343"/></svg>` },
+  { id:23, name:'Раскрытая — заливка страниц',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v10c0 1 1 1.5 2 1.5h2l6-8 6 8h2c1 0 2-0.5 2-1.5V6c0-0.7-0.5-1-1-1h-2l-6 8-6-8H4c-0.5 0-1 0.3-1 1z" fill="#fafafa"/><path d="M12 12v8"/></svg>` },
+  { id:24, name:'Обложка синяя',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="#1677ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z" fill="#e6f4ff"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/></svg>` },
+  { id:25, name:'Обложка зелёная',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="#52c41a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z" fill="#f6ffed"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/></svg>` },
+  { id:26, name:'Обложка фиолетовая',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="#722ed1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z" fill="#f9f0ff"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/></svg>` },
+  { id:27, name:'Страницы веер — заливка',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5l9 9 9-9M3 5v12l2-1 7 8 7-8 2 1V5" fill="#fafafa"/></svg>` },
+  { id:28, name:'Заливка + тень',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z" fill="#fafafa"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/><path d="M20 20h-16v-1h16z" fill="#e8e8e8"/></svg>` },
+  { id:29, name:'Двухцветная обложка',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z" fill="#fff"/><path d="M4 6l2-3h12l2 3"/><path d="M4 6h8v14H4z" fill="#e6f4ff" opacity="0.6"/><path d="M5 6v14"/></svg>` },
+  { id:30, name:'Градиентная обложка',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="gb30" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0f5ff"/><stop offset="100%" stop-color="#d6e4ff"/></linearGradient></defs><path d="M4 6h16v14H4z" fill="url(#gb30)"/><path d="M4 6l2-3h12l2 3"/><path d="M6 6v14"/></svg>` },
+
+  // === 31-40: Decorative ===
+  { id:31, name:'С буквой A',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><text x="12" y="16" text-anchor="middle" font-size="8" font-weight="bold" fill="currentColor" font-family="serif">A</text></svg>` },
+  { id:32, name:'С иконкой мозга',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M10 12c-1 0-2 1-1.5 2s1 1.5 2 0c1-1.5 2.5-1.5 3.5 0s1 1 1.5 0-0.5-2-1.5-2-1.5 1-2 0-1-1-2 0z"/><circle cx="9" cy="11.5" r="0.5" fill="currentColor"/><circle cx="14" cy="11.5" r="0.5" fill="currentColor"/></svg>` },
+  { id:33, name:'Открытая — с AI-схемой',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v10c0 1 1 1.5 2 1.5h2l6-8 6 8h2c1 0 2-0.5 2-1.5V6"/><circle cx="11.5" cy="9" r="1"/><circle cx="16.5" cy="9" r="1"/><line x1="11.5" y1="10" x2="11.5" y2="13"/><line x1="16.5" y1="10" x2="16.5" y2="13"/><line x1="11.5" y1="11.5" x2="16.5" y2="11.5"/></svg>` },
+  { id:34, name:'С закладкой-лентой',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M12 3v6l-1.5-1.5L9 9V3"/></svg>` },
+  { id:35, name:'С лупой',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><circle cx="14" cy="10" r="2"/><line x1="15.5" y1="11.5" x2="17.5" y2="13.5"/></svg>` },
+  { id:36, name:'С молнией',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><polygon points="13,5 10,12 13,12 12,17 16,10 13,10"/></svg>` },
+  { id:37, name:'С сердечком',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><path d="M12 14C10 12 8 10.5 8 9.5a2 2 0 0 1 4-2 2 2 0 0 1 4 2c0 1-2 2.5-4 4.5z"/></svg>` },
+  { id:38, name:'Много страниц',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6l2-3h12l2 3"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="10.5" x2="16" y2="10.5"/><line x1="8" y1="13" x2="14" y2="13"/><line x1="8" y1="15.5" x2="12" y2="15.5"/></svg>` },
+  { id:39, name:'Раскрытая + текст',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v10c0 1 1 1.5 2 1.5h2l6-8 6 8h2c1 0 2-0.5 2-1.5V6"/><line x1="5" y1="8" x2="10" y2="8"/><line x1="5" y1="10" x2="9" y2="10"/><line x1="14" y1="8" x2="19" y2="8"/><line x1="14" y1="10" x2="18" y2="10"/></svg>` },
+  { id:40, name:'Две книги',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h8v12H3z"/><path d="M13 7h8v12h-8z"/><path d="M3 7l1-2h6l1 2"/><path d="M13 7l1-2h6l1 2"/></svg>` },
+
+  // === 41-50: Abstract / stylized ===
+  { id:41, name:'Библия',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v17H4z"/><path d="M4 4l2-2h12l2 2"/><path d="M4 4v17"/><line x1="12" y1="3" x2="12" y2="18"/></svg>` },
+  { id:42, name:'Свиток',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>` },
+  { id:43, name:'Газета',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="15" height="16" rx="1"/><line x1="6" y1="8" x2="15" y2="8"/><line x1="6" y1="11" x2="15" y2="11"/><line x1="6" y1="14" x2="12" y2="14"/><rect x="18" y="8" width="2" height="7" rx="0.5"/></svg>` },
+  { id:44, name:'Справочник',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1"/><line x1="3" y1="5" x2="21" y2="5"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="12" x2="17" y2="12"/></svg>` },
+  { id:45, name:'Блокнот',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="10" x2="16" y2="10"/><circle cx="12" cy="14" r="1" fill="currentColor"/><line x1="8" y1="17" x2="16" y2="17"/></svg>` },
+  { id:46, name:'Папка учебная',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V5c0-1 1-2 2-2h3l2 3h9c1 0 2 1 2 2v12"/><circle cx="12" cy="14" r="2"/><path d="M12 12v4"/></svg>` },
+  { id:47, name:'Wiki-статья',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L3 21h18z"/><line x1="7" y1="14" x2="17" y2="14"/><line x1="8" y1="11" x2="16" y2="11"/></svg>` },
+  { id:48, name:'Конституция',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4z"/><path d="M8 5V3l4 2 4-2v2"/><line x1="7" y1="9" x2="17" y2="9"/><circle cx="10" cy="13" r="0.8" fill="currentColor"/><circle cx="13.5" cy="13" r="0.8" fill="currentColor"/></svg>` },
+  { id:49, name:'Энциклопедия',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="19" rx="1"/><rect x="4" y="3" width="2" height="17" rx="0.5"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="12" x2="14" y2="12"/></svg>` },
+  { id:50, name:'Кодекс',
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12l4 5v11H4z"/><path d="M16 5v5h4"/><line x1="7" y1="9" x2="14" y2="9"/><line x1="7" y1="12" x2="14" y2="12"/><circle cx="9" cy="15" r="0.8" fill="currentColor"/><line x1="11" y1="15" x2="16" y2="15"/></svg>` },
+];
+
+const grid = document.getElementById('grid');
+variants.forEach(v => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const uId = 'b' + v.id;
+  const svgFixed = v.svg.replace(/id="g(\w+)"/g, (_,n) => `id="${uId}${n}"`).replace(/url\(#g(\w+)\)/g, (_,n) => `url(#${uId}${n})`);
+  card.innerHTML = `<span class="n">${v.id}</span><div class="btn">${svgFixed}</div><span class="name">${v.name}</span>`;
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

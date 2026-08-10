@@ -21,8 +21,22 @@ fun Route.aiRoutes() {
     route("/api/v1/ai") {
         // --- Sync ---
         post("sync") {
-            val ok = workerClient.downloadAll() // reuse download endpoint for now
+            val ok = workerClient.downloadAll()
             call.respond(mapOf("started" to ok))
+        }
+
+        post("sync/pause") {
+            val ok = workerClient.pauseDownload()
+            call.respond(mapOf("paused" to ok))
+        }
+
+        post("sync/resume") {
+            val ok = workerClient.resumeDownload()
+            call.respond(mapOf("resumed" to ok))
+        }
+
+        get("sync/status") {
+            call.respond(mapOf("paused" to workerClient.downloadStatus()))
         }
 
         get("activity") {

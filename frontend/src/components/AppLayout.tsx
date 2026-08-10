@@ -1,6 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Button, Typography, Tooltip } from 'antd';
 import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined, RobotOutlined, BookOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Badge } from 'antd';
 import { useAuthStore } from '../stores/authStore';
 import { useEffect, useState } from 'react';
 import api from '../api/client';
@@ -16,30 +17,30 @@ function usePersistedState<T>(key: string, defaultValue: T): [T, (v: T) => void]
   return [state, setAndPersist];
 }
 
-const menuItems = [
-  { key: '/', icon: <DashboardOutlined />, label: 'Дашборд' },
-  { key: '/counterparties', icon: <TeamOutlined />, label: 'Контрагенты' },
-  { key: '/contracts', icon: <FileTextOutlined />, label: 'Договоры' },
-  { key: '/power-profiles', icon: <ThunderboltOutlined />, label: 'Профили мощности' },
-  { key: '/calculations', icon: <CalculatorOutlined />, label: 'Расчёты' },
-  { key: '/invoices', icon: <FilePdfOutlined />, label: 'Счета' },
-  { key: '/ai', icon: <RobotOutlined />, label: collapsed ? 'AI-агент' : 'AI-агент' },
-  {
-    key: '/ai/documents', icon: <BookOutlined />,
-    label: collapsed ? (
-      <Badge count={aiActivity} size="small" offset={[6, -6]}>Норм. база</Badge>
-    ) : (
-      <span>Норм. база {aiActivity > 0 && <Badge count={aiActivity} size="small" style={{ marginLeft: 8 }} />}</span>
-    )
-  },
-];
-
 export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, fetchUser, logout } = useAuthStore();
   const [collapsed, setCollapsed] = usePersistedState('j7-sider-collapsed', false);
   const [aiActivity, setAiActivity] = useState(0);
+
+  const menuItems = [
+    { key: '/', icon: <DashboardOutlined />, label: 'Дашборд' },
+    { key: '/counterparties', icon: <TeamOutlined />, label: 'Контрагенты' },
+    { key: '/contracts', icon: <FileTextOutlined />, label: 'Договоры' },
+    { key: '/power-profiles', icon: <ThunderboltOutlined />, label: 'Профили мощности' },
+    { key: '/calculations', icon: <CalculatorOutlined />, label: 'Расчёты' },
+    { key: '/invoices', icon: <FilePdfOutlined />, label: 'Счета' },
+    { key: '/ai', icon: <RobotOutlined />, label: 'AI-агент' },
+    {
+      key: '/ai/documents', icon: <BookOutlined />,
+      label: collapsed ? (
+        <Badge count={aiActivity} size="small" offset={[6, -6]}>Норм. база</Badge>
+      ) : (
+        <span>Норм. база {aiActivity > 0 && <Badge count={aiActivity} size="small" style={{ marginLeft: 8 }} />}</span>
+      )
+    },
+  ];
 
   useEffect(() => { if (!user) fetchUser(); }, []);
 

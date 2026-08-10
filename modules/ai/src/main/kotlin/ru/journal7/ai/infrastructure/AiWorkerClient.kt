@@ -22,6 +22,11 @@ data class WorkerStatusResponse(
 )
 
 @Serializable
+data class DownloadStatusResponse(
+    val paused: Boolean = false,
+)
+
+@Serializable
 data class WorkerAskRequest(
     val question: String,
     val history: List<WorkerMessage> = emptyList(),
@@ -85,6 +90,28 @@ class AiWorkerClient(
         return try {
             val resp = client.post("$baseUrl/download")
             resp.status.isSuccess()
+        } catch (_: Exception) { false }
+    }
+
+    suspend fun pauseDownload(): Boolean {
+        return try {
+            val resp = client.post("$baseUrl/download/pause")
+            resp.status.isSuccess()
+        } catch (_: Exception) { false }
+    }
+
+    suspend fun resumeDownload(): Boolean {
+        return try {
+            val resp = client.post("$baseUrl/download/resume")
+            resp.status.isSuccess()
+        } catch (_: Exception) { false }
+    }
+
+    suspend fun downloadStatus(): Boolean {
+        return try {
+            val resp = client.get("$baseUrl/download/status")
+            val body = json.decodeFromString(DownloadStatusResponse.serializer(), resp.bodyAsText())
+            body.paused
         } catch (_: Exception) { false }
     }
 }
