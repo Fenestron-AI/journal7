@@ -110,7 +110,7 @@ def _classify_and_sync(conn, source_id: str, source_url: str, doc_group_default:
     # 1. Fetch HTML
     logger.info("Fetching: %s", source_url)
     try:
-        resp = httpx.get(source_url, timeout=45, follow_redirects=True,
+        resp = httpx.get(source_url, timeout=45, follow_redirects=True, verify=False,
                          headers={"User-Agent": "journal7-bot/1.0 (catalog sync)"})
         resp.raise_for_status()
     except Exception as e:
@@ -139,6 +139,12 @@ def _classify_and_sync(conn, source_id: str, source_url: str, doc_group_default:
         if raw_response.startswith("```"):
             raw_response = re.sub(r"^```(?:json)?\s*\n?", "", raw_response)
             raw_response = re.sub(r"\n?```\s*$", "", raw_response)
+
+        # Extract only the JSON array from the response
+        start = raw_response.find("[")
+        end = raw_response.rfind("]")
+        if start != -1 and end != -1 and end > start:
+            raw_response = raw_response[start:end + 1]
 
         documents = json.loads(raw_response)
         if not isinstance(documents, list):
@@ -294,6 +300,8 @@ def sync_all():
     )
     sources = cur.fetchall()
 
+    logger.info("Found %d active LLM sources", len(sources))
+
     if not sources:
         logger.info("No active LLM sources found")
         cur.close()
@@ -307,6 +315,7 @@ def sync_all():
     for src_id, name, url, doc_group, interval, last_synced in sources:
         # Check if due
         last_s = (last_synced or 0) // 1000
+        logger.info("Checking source %s: interval=%s last_s=%d now_s=%d diff=%d", name, interval, last_s, now_s, now_s - last_s)
         if interval == "daily" and (now_s - last_s) < 86400:
             continue
         if interval == "weekly" and (now_s - last_s) < 604800:
@@ -323,20 +332,22 @@ def sync_all():
             result["name"] = name
             result["url"] = url
             stats.append(result)
-            synced += 1
+            if "error" not in result:
+                synced += 1
+                now_ms = int(time.time() * 1000)
+                cur.execute(
+                    "UPDATE ai.sources SET status = 'IDLE', last_synced_at = %s WHERE id = %s",
+                    (now_ms, src_id)
+                )
+                conn.commit()
+            else:
+                cur.execute("UPDATE ai.sources SET status = 'ERROR' WHERE id = %s", (src_id,))
+                conn.commit()
         except Exception as e:
             logger.error("Sync failed for %s: %s", name, e, exc_info=True)
             cur.execute("UPDATE ai.sources SET status = 'ERROR' WHERE id = %s", (src_id,))
             conn.commit()
             stats.append({"name": name, "url": url, "error": str(e)})
-            continue
-
-        now_ms = int(time.time() * 1000)
-        cur.execute(
-            "UPDATE ai.sources SET status = 'IDLE', last_synced_at = %s WHERE id = %s",
-            (now_ms, src_id)
-        )
-        conn.commit()
 
     cur.execute("UPDATE ai.sources SET status = 'SYNCING' WHERE sync_strategy = 'html_parse_so_ups'")
     conn.commit()

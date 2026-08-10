@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     yandex_embedding_model: str = "text-search-doc"     # для индексации
     yandex_embedding_query_model: str = "text-search-query"  # для поиска
     yandex_llm_model: str = "yandexgpt/latest"
-    yandex_sync_model: str = "yandexgpt/lite"
+    yandex_sync_model: str = "yandexgpt-lite/latest"
     yandex_llm_temperature: float = 0.1
     yandex_llm_max_tokens: int = 2000
 

@@ -237,11 +237,11 @@ def _sync_documents(cur, documents: list[dict]) -> dict:
             cur.execute(
                 """INSERT INTO ai.documents
                 (id, title, doc_number, doc_date, revision, doc_type, status,
-                 source, source_url, original_filename, canonical, sort_order,
+                 source, source_url, original_filename, sort_order,
                  metadata, created_at, updated_at, last_checked_at)
-                VALUES (gen_random_uuid(), %s, %s, %s, %s, %s, 'MISSING',
-                 'so-ups.ru', %s, %s, TRUE, %s,
-                 %s,                  %s, %s, %s)""",
+                VALUES (gen_random_uuid(), %s, %s, %s, %s, %s, 'TRACKED',
+                 'so-ups.ru', %s, %s, %s,
+                 %s, %s, %s, %s)""",
                 (doc["title"], doc["doc_number"], doc["doc_date"], doc["revision"],
                  doc["doc_type"], doc["url"], doc["filename"],
                  doc["sort_order"],
@@ -261,7 +261,7 @@ def _archive_removed(cur, documents: list[dict]):
     # Get all doc_numbers from so-ups.ru in DB
     cur.execute(
         "SELECT id, doc_number FROM ai.documents "
-        "WHERE source = 'so-ups.ru' AND status NOT IN ('ARCHIVED', 'OUTDATED', 'MISSING')"
+        "WHERE source = 'so-ups.ru' AND status NOT IN ('ARCHIVED')"
     )
     db_docs = {r[1]: r[0] for r in cur.fetchall() if r[1]}
 
@@ -336,10 +336,10 @@ def _verify_files(cur):
     missing_count = 0
     for doc_id, file_path in cur.fetchall():
         if not file_path or not os.path.exists(file_path) or os.path.getsize(file_path) < 100:
-            cur.execute("UPDATE ai.documents SET status = 'MISSING' WHERE id = %s", (doc_id,))
+            cur.execute("UPDATE ai.documents SET download_state = NULL WHERE id = %s", (doc_id,))
             missing_count += 1
-            logger.info("File missing, reset to MISSING: %s", file_path)
+            logger.info("File missing, reset download_state: %s", file_path)
 
     if missing_count:
         cur.connection.commit()
-        logger.info("Reset %d documents to MISSING (file not found)", missing_count)
+        logger.info("Reset %d documents download_state (file not found)", missing_count)

@@ -83,7 +83,7 @@ def _ingest(document_id: str, file_path: str) -> dict:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("AI worker started. Yandex configured: %s", bool(settings.yandex_api_key))
+    logger.info("AI worker started. Yandex configured: %s", bool(settings.yandex_api_key or settings.yandex_iam_token))
     import threading
     def _safe_download():
         try:
@@ -126,7 +126,7 @@ app = FastAPI(title="journal7 AI Worker", version="0.1.0", lifespan=lifespan)
 async def health():
     return HealthResponse(
         status="ok",
-        yandex_configured=bool(settings.yandex_api_key and settings.yandex_folder_id),
+        yandex_configured=bool((settings.yandex_api_key or settings.yandex_iam_token) and settings.yandex_folder_id),
     )
 
 

@@ -57,7 +57,7 @@ def complete(system_prompt: str, user_text: str, model: str | None = None) -> st
     resp = _client.post(COMPLETION_URL, headers=_headers(), json=payload)
     resp.raise_for_status()
     data = resp.json()
-    alternatives = data.get("alternatives", [])
+    alternatives = data.get("result", {}).get("alternatives", [])
     if not alternatives:
         raise RuntimeError(f"YandexGPT returned no alternatives: {data}")
     return alternatives[0]["message"]["text"]

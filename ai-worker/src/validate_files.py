@@ -34,7 +34,7 @@ def validate():
 
         if not exists:
             c2 = conn.cursor()
-            c2.execute("UPDATE ai.documents SET status = 'MISSING' WHERE id = %s", (doc_id,))
+            c2.execute("UPDATE ai.documents SET download_state = NULL WHERE id = %s", (doc_id,))
             c2.close()
             missing += 1
         else:
