@@ -84,38 +84,7 @@ def _ingest(document_id: str, file_path: str) -> dict:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("AI worker started. Yandex configured: %s", bool(settings.yandex_api_key or settings.yandex_iam_token))
-    import threading
-    def _safe_download():
-        try:
-            download_all()
-        except Exception as e:
-            logger.error("download_all crashed: %s", e, exc_info=True)
-    threading.Thread(target=_safe_download, daemon=True).start()
-
-    # Continuous file validator (5s active, 30s idle)
-    from downloader import validate_files
-    stop_validator = threading.Event()
-    def _validator_loop():
-        while not stop_validator.is_set():
-            try:
-                validate_files()
-            except Exception:
-                pass
-            import psycopg2
-            try:
-                conn = psycopg2.connect(settings.database_url)
-                cur = conn.cursor()
-                cur.execute("SELECT count(*) FROM ai.documents WHERE status IN ('DOWNLOADING','MISSING')")
-                active = cur.fetchone()[0] > 0
-                cur.close()
-                conn.close()
-            except Exception:
-                active = False
-            stop_validator.wait(5 if active else 30)
-    threading.Thread(target=_validator_loop, daemon=True).start()
-
     yield
-    stop_validator.set()
     logger.info("AI worker stopped")
 
 

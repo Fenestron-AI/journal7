@@ -184,7 +184,7 @@ def download_all():
         "SELECT d.id, d.doc_number, d.metadata, d.source FROM ai.documents d "
         "WHERE d.status = 'TRACKED' AND (d.download_state IS NULL OR d.download_state = 'error') "
         "AND (d.metadata::jsonb->>'preferred_url' IS NOT NULL OR d.source_url IS NOT NULL) "
-        "ORDER BY d.metadata::jsonb->>'priority' DESC, d.doc_date"
+        "ORDER BY d.doc_date"
     )
     rows = cur.fetchall()
     cur.close()

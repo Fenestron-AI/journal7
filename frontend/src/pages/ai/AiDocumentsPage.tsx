@@ -192,11 +192,6 @@ export default function AiDocumentsPage() {
     });
   }, [queryClient]);
 
-  const pinMut = useMutation({
-    mutationFn: (id: string) => fetch('/api/v1/ai/documents/' + id + '/pin', { method: 'POST' }).then(r => r.json()),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['ai-docs'] }); },
-  });
-
   const uploadMut = useMutation({
     mutationFn: async () => {
       const form = new FormData();
@@ -237,7 +232,6 @@ export default function AiDocumentsPage() {
       { text: 'Обучить', value: 'train', test: (r: LegalDocumentResponse) => r.downloadState === 'downloaded' && (!r.processingState || r.processingState === 'error') },
       { text: 'Изучаю', value: 'studying', test: (r: LegalDocumentResponse) => r.processingState === 'processing' },
       { text: 'Найти', value: 'find', test: (r: LegalDocumentResponse) => r.downloadState === 'error' },
-      { text: 'Отказаться', value: 'reject', test: (r: LegalDocumentResponse) => r.status === 'TRACKED' && !r.downloadState && r.priority === 'suggested' },
       { text: 'Обучен', value: 'trained', test: (r: LegalDocumentResponse) => r.status === 'INGESTED' && r.downloadState === 'downloaded' },
       { text: 'Забыть', value: 'forget', test: (r: LegalDocumentResponse) => r.status === 'INGESTED' && !r.downloadState },
       { text: 'Удалить', value: 'delete', test: (r: LegalDocumentResponse) => r.status === 'ARCHIVED' },
@@ -254,7 +248,6 @@ export default function AiDocumentsPage() {
         const isAccessible = r.status === 'TRACKED' && !r.downloadState;
         const el = (
           <span>
-            {r.priority === 'suggested' ? <Tag color="blue" style={{ marginRight: 4 }}>Рекомендуется</Tag> : null}
             <span style={{ textDecoration: isArchived ? 'line-through' : 'none', color: isArchived ? '#999' : isAccessible ? '#999' : 'inherit' }}>
               {v || r.originalFilename || '—'}
               {r.docNumber && <Tag style={{ marginLeft: 6 }}>{r.docNumber}</Tag>}
@@ -354,11 +347,7 @@ export default function AiDocumentsPage() {
             </Tooltip>
           );
         if (r.status === 'TRACKED' && !r.downloadState)
-          return r.priority === 'suggested' ? (
-            <Tooltip title="Отказаться — больше не предлагать к скачиванию">
-              <span style={{ fontSize: 13, color: '#bfbfbf', cursor: 'pointer' }} onClick={() => pinMut.mutate(r.id)}>Отказаться</span>
-            </Tooltip>
-          ) : <Text type="secondary">—</Text>;
+          return <Text type="secondary">—</Text>;
         if (r.status === 'INGESTED' && r.downloadState === 'downloaded')
           return <span style={{ fontSize: 13, color: '#009f4d' }}><RobotOutlined /> Обучен</span>;
         if (r.status === 'INGESTED' && !r.downloadState)

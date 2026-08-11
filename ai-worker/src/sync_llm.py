@@ -41,11 +41,8 @@ SYNC_SYSTEM_PROMPT = """Ты — помощник для извлечения с
    - Выкидывай «Постановление Правительства РФ от ДД.ММ.ГГГГ», «Приказ Минэнерго...», «Федеральный закон...» — тип уже указан в type
    - Хорошо: «№35-ФЗ Об электроэнергетике», «№442 Функционирование розничных рынков»
    - Плохо: «Постановление Правительства РФ от 04.05.2012 № 442 «О функционировании...»»
-8. Оцени важность документа в поле priority:
-   - "suggested" — документ нужен для энергосбыта (442-ПП, 35-ФЗ, 1178-ПП, 861-ПП, приказы ФАС о тарифах, регламенты ОРЭМ, стандарты СО ЕЭС, ДОП, методические указания по расчётам)
-   - "normal" — остальное
-9. Если документов нет на странице — верни пустой массив.
-10. Не выдумывай документы, которых нет на странице.
+8. Если документов нет на странице — верни пустой массив.
+9. Не выдумывай документы, которых нет на странице.
 
 Ответ — ТОЛЬКО валидный JSON-массив, без markdown-обёртки, без пояснений:
 
@@ -176,7 +173,6 @@ def _classify_and_sync(conn, source_id: str, source_url: str, doc_group_default:
         doc_type = doc.get("type") or doc.get("doc_type") or doc.get("docType") or "other"
         doc_group = doc.get("doc_group") or doc.get("docGroup") or doc_group_default
         sync_interval = doc.get("sync_interval") or doc.get("syncInterval") or "weekly"
-        priority = doc.get("priority") or "normal"
 
         # New format priority: preferred_url over url, formats stored in metadata
         preferred_url = doc.get("preferred_url") or doc.get("url") or ""
@@ -229,7 +225,6 @@ def _classify_and_sync(conn, source_id: str, source_url: str, doc_group_default:
         meta["source"] = source_domain or "unknown"
         if doc.get("full_title"):
             meta["full_title"] = doc["full_title"]
-        meta["priority"] = priority
         meta_json = json.dumps(meta, ensure_ascii=False)
 
         if existing:
@@ -237,13 +232,11 @@ def _classify_and_sync(conn, source_id: str, source_url: str, doc_group_default:
                 """UPDATE ai.documents SET
                     title = %s, doc_number = %s, doc_date = %s, doc_type = %s,
                     doc_category = %s, sync_interval = %s,
-                    priority = %s,
                     source_url = %s, original_filename = %s,
                     metadata = %s, last_checked_at = %s, updated_at = %s
                 WHERE id = %s""",
                 (title, doc_number, doc_date, doc_type,
                  doc_group, sync_interval,
-                 priority,
                  url, filename,
                  meta_json,
                  now_ms, now_ms, existing[0])
@@ -254,15 +247,15 @@ def _classify_and_sync(conn, source_id: str, source_url: str, doc_group_default:
                 """INSERT INTO ai.documents
                 (id, title, doc_number, doc_date, doc_type, doc_category,
                  status, source, source_url, original_filename,
-                 priority, sync_interval,
+                 sync_interval,
                  metadata, created_at, updated_at, last_checked_at)
                 VALUES (gen_random_uuid(), %s, %s, %s, %s, %s,
                  'TRACKED', %s, %s, %s,
-                 %s, %s,
+                 %s,
                  %s, %s, %s, %s)""",
                  (title, doc_number, doc_date, doc_type, doc_group,
                   source_domain or "unknown", url, filename,
-                  priority, sync_interval,
+                  sync_interval,
                   meta_json,
                   now_ms, now_ms, now_ms)
             )
