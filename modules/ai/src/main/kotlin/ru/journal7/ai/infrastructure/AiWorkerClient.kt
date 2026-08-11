@@ -205,4 +205,14 @@ class AiWorkerClient(
         val resp = client.post("$baseUrl/documents/$docId/pin")
         return resp.bodyAsText()
     }
+
+    suspend fun getActivity(): String {
+        val resp = client.get("$baseUrl/activity")
+        return resp.bodyAsText()
+    }
+
+    suspend fun clearActivity(): String {
+        val resp = client.post("$baseUrl/activity/clear")
+        return resp.bodyAsText()
+    }
 }

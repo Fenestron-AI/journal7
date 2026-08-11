@@ -151,6 +151,35 @@ async def download_status():
     return {"paused": is_paused()}
 
 
+# ============================================================
+# Activity (badge + deltas)
+# ============================================================
+
+@app.get("/activity")
+async def get_activity():
+    conn = psycopg2.connect(settings.database_url)
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute("SELECT COALESCE(SUM(new_count), 0) + COALESCE(SUM(archived_count), 0) FROM ai.activity")
+    changes = cur.fetchone()[0]
+    cur.execute("SELECT COALESCE(SUM(new_count), 0), COALESCE(SUM(archived_count), 0) FROM ai.activity")
+    new, archived = cur.fetchone()
+    cur.close()
+    conn.close()
+    return {"changes": changes, "new": new, "archived": archived}
+
+
+@app.post("/activity/clear")
+async def clear_activity():
+    conn = psycopg2.connect(settings.database_url)
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute("DELETE FROM ai.activity")
+    cur.close()
+    conn.close()
+    return {"cleared": True}
+
+
 @app.post("/ask")
 async def ask_question(req: AskRequest):
     loop = asyncio.get_event_loop()

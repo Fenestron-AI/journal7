@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { Table, Button, Tag, Typography, message, Tooltip, Modal, Input, Upload } from 'antd';
 import { RobotOutlined, PauseOutlined, PauseCircleOutlined, DeleteOutlined, CheckCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CloudDownloadOutlined, DownloadOutlined, LoadingOutlined, HistoryOutlined, InfoCircleOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, InboxOutlined, LinkOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
@@ -52,6 +52,21 @@ export default function AiDocumentsPage() {
     refetchInterval: (query) => query.state.data?.some((d: any) => d.downloadState === 'downloading' || d.processingState === 'processing') ? 3000 : 10000,
   });
 
+  const { data: activity } = useQuery({
+    queryKey: ['ai-activity-delta'],
+    queryFn: () => aiApi.activity(),
+    refetchInterval: 30000,
+  });
+
+  const [delta, setDelta] = useState<{ new: number; archived: number } | null>(null);
+
+  // Show delta from activity on first load
+  useEffect(() => {
+    if (activity && (activity.new > 0 || activity.archived > 0)) {
+      setDelta({ new: activity.new, archived: activity.archived });
+    }
+  }, [activity]);
+
   const syncActive = (docs || []).some(d => d.downloadState === 'downloading');
   const needDownload = (docs || []).filter(d => d.status === 'TRACKED' && (d.downloadState == null || d.downloadState === 'error')).length;
   const canIngest = (docs || []).filter(d => d.downloadState === 'downloaded' && !d.processingState).length;
@@ -81,9 +96,16 @@ export default function AiDocumentsPage() {
   const syncMut = useMutation({
     mutationFn: () => aiApi.sync() as Promise<any>,
     onSuccess: (data: any) => {
-      const total = (data?.details || []).reduce((s: number, d: any) => s + (d.new || 0), 0);
-      if (total > 0) message.success(`Каталог обновлён: +${total} новых документов`);
-      else message.success('Каталог актуален');
+      const details = data?.details || [];
+      const totalNew = details.reduce((s: number, d: any) => s + (d.new || 0), 0);
+      const totalArchived = details.reduce((s: number, d: any) => s + (d.archived || 0), 0);
+      if (totalNew > 0 || totalArchived > 0) {
+        setDelta({ new: totalNew, archived: totalArchived });
+      }
+      if (data?.sources_synced > 0) {
+        message.success(`Каталог обновлён: ${data.sources_synced} источников`);
+      }
+      aiApi.clearActivity();
       queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
     },
     onError: () => message.error('Не удалось обновить каталог'),
@@ -392,7 +414,11 @@ export default function AiDocumentsPage() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <Tooltip title="Доступны на внешних источниках" mouseEnterDelay={0.3}>
-            <Tag color="blue" icon={<LinkOutlined />}>Доступно: {stats.tracked || 0}</Tag>
+            <Tag color="blue" icon={<LinkOutlined />}>
+              Доступно: {stats.tracked || 0}
+              {delta && delta.new > 0 && <span style={{ color: '#009f4d', marginLeft: 2 }}> ↑{delta.new}</span>}
+              {delta && delta.archived > 0 && <span style={{ color: '#cf1322', marginLeft: 2 }}> ↓{delta.archived}</span>}
+            </Tag>
           </Tooltip>
           <Tooltip title="Загружен в RAG" mouseEnterDelay={0.3}>
             <Tag style={{ background: '#e6f9f0', border: 'none', color: '#009f4d' }} icon={<CheckCircleOutlined style={{ color: '#009f4d' }} />}>Готов: {stats.ingested || 0}</Tag>

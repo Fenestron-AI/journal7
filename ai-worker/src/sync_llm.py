@@ -357,6 +357,20 @@ def sync_all():
     cur.close()
     conn.close()
 
+    # Record activity
+    total_new = sum(s.get("new", 0) for s in stats if isinstance(s, dict))
+    total_archived = sum(s.get("archived", 0) for s in stats if isinstance(s, dict))
+    if total_new > 0 or total_archived > 0:
+        conn2 = _connect()
+        cur2 = conn2.cursor()
+        cur2.execute(
+            "INSERT INTO ai.activity (new_count, archived_count, created_at) VALUES (%s, %s, %s)",
+            (total_new, total_archived, int(time.time() * 1000))
+        )
+        conn2.commit()
+        cur2.close()
+        conn2.close()
+
     logger.info("=== Sync all done: %d sources synced ===", synced)
     return {"sources_synced": synced, "details": stats}
 
@@ -386,6 +400,17 @@ def sync_single(source_id: str) -> dict:
                      (now_ms, src_id))
         conn.commit()
         result["name"] = name
+        # Record activity for single source
+        new = result.get("new", 0)
+        archived = result.get("archived", 0)
+        if new > 0 or archived > 0:
+            cur2 = _connect().cursor()
+            cur2.execute(
+                "INSERT INTO ai.activity (new_count, archived_count, created_at) VALUES (%s, %s, %s)",
+                (new, archived, int(time.time() * 1000))
+            )
+            cur2.connection.commit()
+            cur2.close()
         return result
     except Exception as e:
         logger.error("Sync failed for %s: %s", name, e, exc_info=True)

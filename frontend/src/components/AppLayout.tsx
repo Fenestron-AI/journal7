@@ -1,8 +1,9 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Button, Typography, Tooltip } from 'antd';
+import { Layout, Menu, Button, Typography, Tooltip, Badge } from 'antd';
 import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined, RobotOutlined, BookOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { useEffect, useState } from 'react';
+import { aiApi } from '../api/ai';
 
 const { Sider, Content, Header } = Layout;
 
@@ -20,6 +21,17 @@ export default function AppLayout() {
   const location = useLocation();
   const { user, fetchUser, logout } = useAuthStore();
   const [collapsed, setCollapsed] = usePersistedState('j7-sider-collapsed', false);
+  const [activity, setActivity] = useState(0);
+
+  useEffect(() => { if (!user) fetchUser(); }, []);
+
+  // Poll AI activity for badge
+  useEffect(() => {
+    const poll = () => { aiApi.activity().then(r => setActivity(r.changes || 0)).catch(() => {}); };
+    poll();
+    const timer = setInterval(poll, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const menuItems = [
     { key: '/', icon: <DashboardOutlined />, label: 'Дашборд' },
@@ -30,8 +42,15 @@ export default function AppLayout() {
     { key: '/invoices', icon: <FilePdfOutlined />, label: 'Счета' },
     { key: '/ai', icon: <RobotOutlined />, label: 'AI-агент' },
     {
-      key: '/ai/documents', icon: <BookOutlined />,
-      label: 'Нормативная база',
+      key: '/ai/documents',
+      icon: collapsed
+        ? <Badge dot color="red" offset={[-2, 6]}><BookOutlined /></Badge>
+        : <BookOutlined />,
+      label: collapsed ? (
+        <span>Нормативная база {activity > 0 && <Badge dot color="red" offset={[2, -2]} />}</span>
+      ) : (
+        <span>Нормативная база {activity > 0 && <Badge dot color="red" style={{ marginLeft: 6 }} />}</span>
+      ),
     },
   ];
 

@@ -35,6 +35,12 @@ export interface SourceResponse {
   last_synced_at: number;
 }
 
+export interface ActivityResponse {
+  changes: number;
+  new: number;
+  archived: number;
+}
+
 export interface SyncResponse {
   sources_synced?: number;
   details?: SyncDetail[];
@@ -102,7 +108,9 @@ export const aiApi = {
   syncSource: (sourceId?: string) =>
     api.post('/ai/sync', sourceId ? { source_id: sourceId } : {}).then(r => r.data),
   activity: () =>
-    api.get<{ count: number }>('/ai/activity').then(r => r.data),
+    api.get<ActivityResponse>('/ai/activity').then(r => r.data),
+  clearActivity: () =>
+    api.post('/ai/activity/clear'),
   refresh: () =>
     api.post('/ai/documents/refresh').then(r => r.data),
   ask: (question: string, messages: { role: string; content: string }[] = []) =>

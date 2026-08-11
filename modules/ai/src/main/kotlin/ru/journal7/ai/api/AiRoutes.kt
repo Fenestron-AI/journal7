@@ -52,6 +52,16 @@ fun Route.aiRoutes() {
             call.respondText(resp, ContentType.Application.Json)
         }
 
+        get("activity") {
+            val json = workerClient.getActivity()
+            call.respondText(json, ContentType.Application.Json)
+        }
+
+        post("activity/clear") {
+            val json = workerClient.clearActivity()
+            call.respondText(json, ContentType.Application.Json)
+        }
+
         get("sync/status") {
             call.respond(mapOf("paused" to workerClient.downloadStatus()))
         }
