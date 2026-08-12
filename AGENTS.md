@@ -347,6 +347,13 @@ curl -o /dev/null -w "%{http_code}" http://localhost:8001/docs
 
 Worker connects via `formula_ocr_url` in `.env` (default `http://localhost:8001`).
 
+### Formula extraction in DOCX/RTF (`ai-worker/src/docx_math.py`)
+
+- **oMath** (нативные уравнения Word) → LaTeX напрямую из XML, без OCR
+- **WMF/EMF-картинки** (MathType и legacy-формулы) → LibreOffice (`soffice`) → PNG → p2t
+- **RTF**: `{\pict\wmetafile8}` блоки → hex → WMF → soffice → p2t
+- Требует установленный `soffice` на машине с воркером. Если p2t/soffice недоступны — формулы пропускаются, пайплайн не падает
+
 ### Archive
 1. Удалить старые файлы из data/legal-docs/current/ (имена типа 100.pdf)
 2. Запустить worker → авто-докачка 71 MISSING документов с оригинальными именами

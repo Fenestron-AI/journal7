@@ -7,14 +7,16 @@ from pathlib import Path
 
 
 def extract_text(file_path: str, ocr_formulas: bool = True) -> str:
-    """Extract text; optionally insert LaTeX formulas (via pix2text server)."""
+    """Extract text; optionally insert LaTeX formulas (oMath directly, images via pix2text)."""
     path = Path(file_path)
     suffix = path.suffix.lower()
     text = ""
     if suffix == ".rtf":
-        text = _extract_rtf(path)
+        import docx_math
+        text = docx_math.extract_rtf_with_math(path, ocr_formulas)
     elif suffix == ".docx":
-        text = _extract_docx(path)
+        import docx_math
+        text = docx_math.extract_docx_text(path, ocr_formulas)
     elif suffix == ".pdf":
         text = _extract_pdf(path)
         if ocr_formulas:
@@ -22,7 +24,8 @@ def extract_text(file_path: str, ocr_formulas: bool = True) -> str:
     elif suffix in (".txt", ".md"):
         text = path.read_text(encoding="utf-8", errors="replace")
     else:
-        text = _extract_rtf(path)
+        import docx_math
+        text = docx_math.extract_rtf_with_math(path, ocr_formulas)
     return text
 
 
@@ -100,47 +103,6 @@ def _render_page_to_png(pdf_path: Path, page_num: int) -> bytes | None:
         if not files:
             return None
         return Path(files[0]).read_bytes()
-
-
-def _extract_rtf(path: Path) -> str:
-    """Extract text from RTF. Handles cp1251 hex escapes and tables."""
-    try:
-        from striprtf.striprtf import rtf_to_text
-        raw = path.read_text(encoding="cp1251", errors="replace")
-        return rtf_to_text(raw)
-    except ImportError:
-        pass
-
-    # Fallback manual stripper
-    raw = path.read_bytes().decode("latin-1")
-    text = re.sub(r"\\'([0-9a-fA-F]{2})", lambda m: _hex_to_char(m.group(1)), raw)
-    text = re.sub(r"\\[a-zA-Z]+\d*\s?", " ", text)
-    text = re.sub(r"\{[^{}]*\}", "", text)
-    text = text.replace("\\par", "\n").replace("\\cell", " | ").replace("\\row", "\n")
-    text = re.sub(r"[ \t]+", " ", text)
-    text = re.sub(r"\n\s*\n+", "\n\n", text)
-    return text
-
-
-def _hex_to_char(hex_str: str) -> str:
-    try:
-        return bytes([int(hex_str, 16)]).decode("cp1251")
-    except Exception:
-        return "?"
-
-
-def _extract_docx(path: Path) -> str:
-    try:
-        from docx import Document
-        doc = Document(str(path))
-        parts = [p.text for p in doc.paragraphs if p.text.strip()]
-        for table in doc.tables:
-            for row in table.rows:
-                cells = [c.text.strip() for c in row.cells]
-                parts.append(" | ".join(cells))
-        return "\n".join(parts)
-    except ImportError:
-        return path.read_text(encoding="utf-8", errors="replace")
 
 
 def _extract_pdf(path: Path) -> str:

@@ -154,7 +154,7 @@
 - [x] `config.py` — `formula_ocr_url`; `.env` — `FORMULA_OCR_URL=http://localhost:8001`
 - [x] AGENTS.md — заметка про запуск p2t serve локально
 - [ ] Docker: `Dockerfile.pix2text-ocr` + docker-compose (при переезде на хостинг)
-- [ ] DOCX/RTF: извлечение формул (WMF/EMF → PNG → MFR) — после PDF
+- [x] DOCX/RTF: извлечение формул — oMath→LaTeX напрямую (без OCR) + WMF/EMF-картинки → soffice → PNG → p2t (MFR), вставка в позицию; RTF: `{\pict\wmetafile8}`. Модуль `ai-worker/src/docx_math.py`
 
 ---
 
