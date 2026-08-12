@@ -50,3 +50,6 @@ data/
 ai-worker/venv/
 **/__pycache__/
 ai-worker/.env
+
+# opencode (local config)
+.opencode/
