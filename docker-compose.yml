@@ -42,6 +42,66 @@ services:
     volumes:
       - miniodata:/data
 
+  # AI worker: FastAPI (sync/ingest/QA) + pix2text OCR + LibreOffice + poppler
+  # in one container. pix2text listens on 8001 (localhost inside container).
+  worker:
+    build:
+      context: ./ai-worker
+      args:
+        P2T_DEVICE: cpu
+    container_name: journal7-worker
+    env_file:
+      - ./ai-worker/.env
+    environment:
+      DATABASE_URL: postgresql://journal7:journal7_dev@postgres:5432/journal7
+      FORMULA_OCR_URL: http://localhost:8001
+      WATCH_DIR: /app/data/legal-docs
+      P2T_DEVICE: cpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/legal-docs:/app/data/legal-docs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+  # Same image but with onnxruntime-gpu; requires nvidia-container-toolkit.
+  # Enable: docker compose --profile gpu up -d worker-gpu
+  worker-gpu:
+    profiles: [gpu]
+    build:
+      context: ./ai-worker
+      args:
+        P2T_DEVICE: gpu
+    container_name: journal7-worker-gpu
+    env_file:
+      - ./ai-worker/.env
+    environment:
+      DATABASE_URL: postgresql://journal7:journal7_dev@postgres:5432/journal7
+      FORMULA_OCR_URL: http://localhost:8001
+      WATCH_DIR: /app/data/legal-docs
+      P2T_DEVICE: gpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/legal-docs:/app/data/legal-docs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
 volumes:
   pgdata:
   redisdata:
