@@ -322,7 +322,41 @@ setsid bash -c 'cd /home/fenestron/Developer/journal7/ai-worker && exec env PYTH
 - V5: sync model (sources, original_filename, file_size, source_url, archive)
 
 ### Next session
+
+1. Завершить синк утверждённого каталога: досинхронизировать НПСР Регламенты ОРЭМ (доступен без VPN, worker с verify=False)
+2. Дополнить недостающие документы (354-ПП, 261-ФЗ, ГК, КоАП) — через ручной URL, pravo.gov.ru под VPN или другие доступные источники
+3. Скачать файлы утверждённых документов (через download в UI)
+4. Индексация (обучение агента) — локально на GPU, с OCR формул (p2t serve)
+5. UI: колонка «Категория», раскрытие строки с полным названием, панель diff + подтверждение
+
+---
+
+## Session 2026-08-11: Runtime Notes
+
+### Formula OCR (pix2text)
+
+Local dev-only server for training (Docker later for hosting):
+
+```bash
+# Start pix2text OCR server (GPU, separate venv):
+setsid bash -c 'cd /tmp/opencode && exec ./p2t-venv/bin/p2t serve --device gpu --host 0.0.0.0 --port 8001 --enable-formula --disable-table' </dev/null &>/tmp/p2t.log & disown
+
+# Check:
+curl -o /dev/null -w "%{http_code}" http://localhost:8001/docs
+```
+
+Worker connects via `formula_ocr_url` in `.env` (default `http://localhost:8001`).
+
+### Archive
 1. Удалить старые файлы из data/legal-docs/current/ (имена типа 100.pdf)
 2. Запустить worker → авто-докачка 71 MISSING документов с оригинальными именами
 3. Обработать ключевые документы (442, 1178, 861, 35-ФЗ) — кнопка ▶ в UI
 4. Протестировать AI-чат с цитированием норм
+
+---
+
+## MCP Servers & VPN
+
+If an MCP server is unreachable (connection refused, timeout, DNS failure, or any transport error):
+1. Tell the user to **enable VPN** and then retry the MCP call.
+2. Do NOT silently skip the MCP call or proceed without it — always prompt the user first.
