@@ -263,7 +263,7 @@ In Omega, to create a contract you had to: open counterparty form → save → o
 
 ## Current Status
 
-> **Поля форм (черновик):** см. `docs/fields-prospective.md` — возможный состав полей на основе материалов PromSE + форм Omega. Решение по составу не принято.
+> **Документы проекта:** `docs/PLAN.md` — план, решения и статусы; `docs/ROADMAP.md` — карта всех разделов продукта; `docs/PLAN-NORM-BAZA.md` — детальный план раздела «Нормативная база» (рабочий приоритет).
 
 ### Backend modules: 10/10 ✅
 - [x] Core, Auth, Reference, Contract, Calculation, Billing, Reporting, Integration, AI, App
