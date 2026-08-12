@@ -1,9 +1,9 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { Table, Button, Tag, Typography, message, Tooltip, Modal, Input, Upload, Progress, Switch } from 'antd';
-import { RobotOutlined, PauseOutlined, PauseCircleOutlined, DeleteOutlined, CheckCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CloudDownloadOutlined, DownloadOutlined, LoadingOutlined, HistoryOutlined, InfoCircleOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, InboxOutlined, LinkOutlined, StopOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Typography, message, Tooltip, Modal, Input, Upload, Progress, Switch, Badge, Dropdown, List, Empty } from 'antd';
+import { RobotOutlined, PauseOutlined, PauseCircleOutlined, DeleteOutlined, CheckCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CloudDownloadOutlined, DownloadOutlined, LoadingOutlined, HistoryOutlined, InfoCircleOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, InboxOutlined, LinkOutlined, StopOutlined, SwapOutlined, EyeInvisibleOutlined, UndoOutlined, TagOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { aiApi, LegalDocumentResponse, SyncStateResponse } from '../../api/ai';
+import { aiApi, LegalDocumentResponse, SyncStateResponse, SyncDiff, CATEGORIES } from '../../api/ai';
 import MarketScheme from '../../components/MarketScheme';
 
 const { Text, Title } = Typography;
@@ -44,6 +44,9 @@ export default function AiDocumentsPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadNumber, setUploadNumber] = useState('');
+  const [diffsOpen, setDiffsOpen] = useState(false);
+  const [urlDoc, setUrlDoc] = useState<LegalDocumentResponse | null>(null);
+  const [urlValue, setUrlValue] = useState('');
   const fileRef = useRef<File | null>(null);
 
   const { data: docs, isLoading } = useQuery({
@@ -56,6 +59,22 @@ export default function AiDocumentsPage() {
     queryKey: ['ai-activity-delta'],
     queryFn: () => aiApi.activity(),
     refetchInterval: 30000,
+  });
+
+  const { data: diffs } = useQuery({
+    queryKey: ['ai-diffs'],
+    queryFn: () => aiApi.getDiffs(),
+    refetchInterval: 30000,
+  });
+
+  const ackMut = useMutation({
+    mutationFn: (ids: string[]) => aiApi.acknowledgeDiffs(ids),
+    onSuccess: (res: any) => {
+      message.success(res?.acknowledged ? `Подтверждено изменений: ${res.acknowledged}` : 'Нет неподтверждённых изменений');
+      queryClient.invalidateQueries({ queryKey: ['ai-diffs'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-activity-delta'] });
+    },
+    onError: () => message.error('Не удалось подтвердить изменения'),
   });
 
   const { data: syncState, refetch: refetchSyncState } = useQuery({
@@ -106,6 +125,7 @@ export default function AiDocumentsPage() {
     if (prevRunning.current && !syncRunning) {
       queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
       queryClient.invalidateQueries({ queryKey: ['ai-activity-delta'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-diffs'] });
       const res = syncState?.last_result;
       if (res) {
         const details = res.details || [];
@@ -259,6 +279,48 @@ export default function AiDocumentsPage() {
       duration: 5,
     });
   }, [queryClient]);
+
+  const forgetBatchMut = useMutation({
+    mutationFn: (ids: string[]) => aiApi.forgetDocuments(ids),
+    onSuccess: (res: any) => {
+      message.success(`Забыто документов: ${res?.forgotten || 0}`);
+      setSelected([]);
+      queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-activity-delta'] });
+    },
+    onError: () => message.error('Не удалось забыть документы'),
+  });
+
+  const unforgetBatchMut = useMutation({
+    mutationFn: (ids: string[]) => aiApi.unforgetDocuments(ids),
+    onSuccess: (res: any) => {
+      message.success(`Восстановлено документов: ${res?.unforgotten || 0}`);
+      setSelected([]);
+      queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
+    },
+    onError: () => message.error('Не удалось восстановить документы'),
+  });
+
+  const categoryMut = useMutation({
+    mutationFn: ({ ids, category }: { ids: string[]; category: string }) => aiApi.setCategory(ids, category),
+    onSuccess: (res: any) => {
+      message.success(`Категория обновлена у ${res?.updated || 0} документов`);
+      setSelected([]);
+      queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
+    },
+    onError: () => message.error('Не удалось обновить категорию'),
+  });
+
+  const setUrlMut = useMutation({
+    mutationFn: ({ id, url }: { id: string; url: string }) => aiApi.setDocumentUrl(id, url),
+    onSuccess: () => {
+      message.success('URL указан, файл скачивается');
+      setUrlDoc(null);
+      setUrlValue('');
+      queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
+    },
+    onError: (e: any) => message.error(e.response?.data?.detail || 'Некорректный URL'),
+  });
 
   const uploadMut = useMutation({
     mutationFn: async () => {
@@ -420,7 +482,11 @@ export default function AiDocumentsPage() {
             </Tooltip>
           );
         if (r.status === 'TRACKED' && !r.downloadState)
-          return <Text type="secondary">—</Text>;
+          return (
+            <Tooltip title="Файл не найден на источнике. Указать URL вручную (например, pravo.gov.ru)">
+              <Button type="text" size="small" icon={<LinkOutlined />} onClick={() => { setUrlDoc(r); setUrlValue(r.sourceUrl || ''); }} style={{ color: '#1677ff', fontSize: 13 }}>URL</Button>
+            </Tooltip>
+          );
         if (r.status === 'INGESTED' && r.downloadState === 'downloaded')
           return <span style={{ fontSize: 13, color: '#009f4d' }}><RobotOutlined /> Обучен</span>;
         if (r.status === 'INGESTED' && !r.downloadState)
@@ -514,6 +580,9 @@ export default function AiDocumentsPage() {
               </Tooltip>
             </div>
           )}
+          <Badge count={diffs?.length || 0} size="small" offset={[-4, 4]}>
+            <Button icon={<SwapOutlined />} onClick={() => setDiffsOpen(true)}>Изменения</Button>
+          </Badge>
           <Button icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>Загрузить файл</Button>
           <Tooltip title={schedulerState?.enabled ? 'Автосинк включён — планировщик проверяет источники по расписанию' : 'Автосинк выключен — синк только по кнопке «Обновить каталог»'}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
@@ -553,11 +622,26 @@ export default function AiDocumentsPage() {
         overflow: 'hidden',
         transition: 'max-height 0.15s',
         marginBottom: selected.length > 0 ? 8 : 0,
-        display: 'flex', gap: 8,
+        display: 'flex', gap: 8, alignItems: 'center',
       }}>
+        <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>Выбрано: {selected.length}</Text>
+        <Button size="small" icon={<EyeInvisibleOutlined />} disabled={forgetBatchMut.isPending}
+          onClick={() => forgetBatchMut.mutate(selected)}>
+          Забыть
+        </Button>
+        <Button size="small" icon={<UndoOutlined />} disabled={unforgetBatchMut.isPending}
+          onClick={() => unforgetBatchMut.mutate(selected)}>
+          Восстановить
+        </Button>
+        <Dropdown menu={{
+          items: Object.entries(CATEGORIES).map(([value, label]) => ({ key: value, label })),
+          onClick: ({ key }) => categoryMut.mutate({ ids: selected, category: key }),
+        }} disabled={categoryMut.isPending}>
+          <Button size="small" icon={<TagOutlined />}>Категория</Button>
+        </Dropdown>
         <Button danger size="small" icon={<DeleteOutlined />}
           onClick={() => { softDeleteBatch(selected); setSelected([]); }}>
-          Удалить выбранные{selected.length > 0 ? ` (${selected.length})` : ''}
+          Удалить
         </Button>
         <Button size="small" onClick={() => setSelected([])}>
           Снять выделение
@@ -578,6 +662,75 @@ export default function AiDocumentsPage() {
       <Modal title={null} open={schemeOpen} onCancel={() => setSchemeOpen(false)} footer={null} width={1120}
         style={{ top: 20 }} styles={{ body: { padding: 0 } }}>
         <MarketScheme />
+      </Modal>
+
+      <Modal
+        title="Изменения каталога"
+        open={diffsOpen}
+        onCancel={() => setDiffsOpen(false)}
+        width={760}
+        footer={[
+          <Button key="close" onClick={() => setDiffsOpen(false)}>Закрыть</Button>,
+          <Button key="all" type="primary" onClick={() => ackMut.mutate([])} loading={ackMut.isPending} disabled={!diffs?.length}>
+            Подтвердить все
+          </Button>,
+        ]}
+      >
+        {!diffs?.length ? (
+          <Empty description="Неподтверждённых изменений нет. Они появятся после синхронизации каталога." />
+        ) : (
+          <List
+            dataSource={diffs}
+            size="small"
+            renderItem={(d: SyncDiff) => (
+              <List.Item
+                actions={[
+                  <Button key="ack" type="link" size="small" loading={ackMut.isPending} onClick={() => ackMut.mutate([d.id])}>
+                    Подтвердить
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={<span>{d.sourceName} <Text type="secondary" style={{ fontSize: 12 }}>{new Date(d.createdAt).toLocaleString('ru-RU')}</Text></span>}
+                  description={
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 560 }}>
+                      {(d.newDocs || []).map((doc, i) => (
+                        <span key={`n${i}`} style={{ color: '#009f4d' }}>
+                          + {doc.title}{doc.doc_number ? ` (${doc.doc_number})` : ''}
+                        </span>
+                      ))}
+                      {(d.archivedDocs || []).map((doc, i) => (
+                        <span key={`a${i}`} style={{ color: '#cf1322', textDecoration: 'line-through' }}>
+                          − {doc.title}{doc.doc_number ? ` (${doc.doc_number})` : ''}
+                        </span>
+                      ))}
+                    </div>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        title={urlDoc ? `Указать URL файла — ${urlDoc.title}` : 'Указать URL файла'}
+        open={!!urlDoc}
+        onCancel={() => setUrlDoc(null)}
+        onOk={() => urlDoc && setUrlMut.mutate({ id: urlDoc.id, url: urlValue.trim() })}
+        confirmLoading={setUrlMut.isPending}
+        okText="Скачать"
+        width={520}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Text type="secondary">Для документов, которых нет на официальных источниках (например, 354-ПП — pravo.gov.ru). Файл скачается сразу.</Text>
+          <Input
+            placeholder="https://..."
+            value={urlValue}
+            onChange={e => setUrlValue(e.target.value)}
+            onPressEnter={() => urlDoc && setUrlMut.mutate({ id: urlDoc.id, url: urlValue.trim() })}
+          />
+        </div>
       </Modal>
 
       <Modal

@@ -33,7 +33,86 @@ export interface SourceResponse {
   active: boolean;
   status: string;
   last_synced_at: number;
+  crawl_depth: number;
+  url_filter: string[];
 }
+
+export interface SourcePayload {
+  name: string;
+  url: string;
+  doc_group?: string;
+  sync_interval?: string;
+  crawl_depth?: number;
+  url_filter?: string[];
+  active?: boolean;
+}
+
+export interface CatalogRuleResponse {
+  id: string;
+  action: string;
+  priority: number;
+  source: string | null;
+  category: string | null;
+  doc_type: string | null;
+  doc_number: string | null;
+  title_mask: string | null;
+  comment: string | null;
+  active: boolean;
+  createdAt: number;
+}
+
+export interface CatalogRulePayload {
+  action?: string;
+  priority?: number;
+  source?: string | null;
+  category?: string | null;
+  doc_type?: string | null;
+  doc_number?: string | null;
+  title_mask?: string | null;
+  comment?: string | null;
+  active?: boolean;
+}
+
+export interface FileSourceResponse {
+  id: string;
+  domain: string;
+  priority: number;
+  active: boolean;
+  comment: string | null;
+  createdAt: number;
+}
+
+export interface FileSourcePayload {
+  domain: string;
+  priority?: number;
+  comment?: string | null;
+  active?: boolean;
+}
+
+export const CATEGORIES: Record<string, string> = {
+  laws: 'Законы',
+  regulations: 'Постановления',
+  standards: 'Стандарты и правила',
+  charters: 'Уставы',
+  other: 'Прочее',
+  tariffs: 'Тарифы',
+};
+
+export const INTERVALS: Record<string, string> = {
+  weekly: 'Еженедельно',
+  monthly: 'Ежемесячно',
+};
+
+export const DOC_TYPES: Record<string, string> = {
+  law: 'ФЗ',
+  decree: 'Постановление',
+  order: 'Приказ',
+  regulation: 'Регламент',
+  contract: 'Договор',
+  standard: 'Стандарт',
+  method: 'Методика',
+  other: 'Прочее',
+};
 
 export interface ActivityResponse {
   changes: number;
@@ -142,14 +221,30 @@ export const aiApi = {
     api.get<{ paused: boolean }>('/ai/sync/status').then(r => r.data),
   listSources: () =>
     api.get<SourceResponse[]>('/ai/sources').then(r => r.data),
-  createSource: (data: { name: string; url: string; doc_group?: string; sync_interval?: string }) =>
+  createSource: (data: SourcePayload) =>
     api.post('/ai/sources', data).then(r => r.data),
-  updateSource: (id: string, data: Record<string, unknown>) =>
+  updateSource: (id: string, data: Partial<SourcePayload>) =>
     api.put(`/ai/sources/${id}`, data).then(r => r.data),
   deleteSource: (id: string) =>
     api.delete(`/ai/sources/${id}`),
   syncSource: (sourceId?: string) =>
     api.post('/ai/sync', sourceId ? { source_id: sourceId } : {}).then(r => r.data),
+  listCatalogRules: () =>
+    api.get<CatalogRuleResponse[]>('/ai/catalog-rules').then(r => r.data),
+  createCatalogRule: (data: CatalogRulePayload) =>
+    api.post('/ai/catalog-rules', data).then(r => r.data),
+  updateCatalogRule: (id: string, data: CatalogRulePayload) =>
+    api.put(`/ai/catalog-rules/${id}`, data).then(r => r.data),
+  deleteCatalogRule: (id: string) =>
+    api.delete(`/ai/catalog-rules/${id}`),
+  listFileSources: () =>
+    api.get<FileSourceResponse[]>('/ai/file-sources').then(r => r.data),
+  createFileSource: (data: FileSourcePayload) =>
+    api.post('/ai/file-sources', data).then(r => r.data),
+  updateFileSource: (id: string, data: Partial<FileSourcePayload>) =>
+    api.put(`/ai/file-sources/${id}`, data).then(r => r.data),
+  deleteFileSource: (id: string) =>
+    api.delete(`/ai/file-sources/${id}`),
   activity: () =>
     api.get<ActivityResponse>('/ai/activity').then(r => r.data),
   clearActivity: () =>

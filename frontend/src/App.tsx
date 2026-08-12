@@ -12,6 +12,7 @@ import CalculationsPage from './pages/calculations/CalculationsPage';
 import InvoicesPage from './pages/invoices/InvoicesPage';
 import AiChatPage from './pages/ai/AiChatPage';
 import AiDocumentsPage from './pages/ai/AiDocumentsPage';
+import AiSettingsPage from './pages/ai/AiSettingsPage';
 import { useAuthStore } from './stores/authStore';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } });
@@ -40,6 +41,7 @@ export default function App() {
                 <Route path="invoices" element={<InvoicesPage />} />
                 <Route path="ai" element={<AiChatPage />} />
                 <Route path="ai/documents" element={<AiDocumentsPage />} />
+                <Route path="ai/settings" element={<AiSettingsPage />} />
               </Route>
             </Routes>
           </BrowserRouter>

@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Button, Typography, Tooltip, Badge } from 'antd';
-import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined, RobotOutlined, BookOutlined } from '@ant-design/icons';
+import { TeamOutlined, FileTextOutlined, ThunderboltOutlined, CalculatorOutlined, FilePdfOutlined, DashboardOutlined, LogoutOutlined, DoubleLeftOutlined, DoubleRightOutlined, RobotOutlined, BookOutlined, SettingOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { useEffect, useState } from 'react';
 import { aiApi } from '../api/ai';
@@ -52,6 +52,7 @@ export default function AppLayout() {
         <span>Нормативная база {activity > 0 && <Badge dot color="red" style={{ marginLeft: 6 }} />}</span>
       ),
     },
+    { key: '/ai/settings', icon: <SettingOutlined />, label: 'Состав и источники' },
   ];
 
   useEffect(() => { if (!user) fetchUser(); }, []);
