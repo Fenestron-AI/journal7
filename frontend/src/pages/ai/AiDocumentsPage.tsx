@@ -1,9 +1,9 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { Table, Button, Tag, Typography, message, Tooltip, Modal, Input, Upload } from 'antd';
-import { RobotOutlined, PauseOutlined, PauseCircleOutlined, DeleteOutlined, CheckCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CloudDownloadOutlined, DownloadOutlined, LoadingOutlined, HistoryOutlined, InfoCircleOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, InboxOutlined, LinkOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Typography, message, Tooltip, Modal, Input, Upload, Progress, Switch } from 'antd';
+import { RobotOutlined, PauseOutlined, PauseCircleOutlined, DeleteOutlined, CheckCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CloudDownloadOutlined, DownloadOutlined, LoadingOutlined, HistoryOutlined, InfoCircleOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, InboxOutlined, LinkOutlined, StopOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { aiApi, LegalDocumentResponse } from '../../api/ai';
+import { aiApi, LegalDocumentResponse, SyncStateResponse } from '../../api/ai';
 import MarketScheme from '../../components/MarketScheme';
 
 const { Text, Title } = Typography;
@@ -58,6 +58,70 @@ export default function AiDocumentsPage() {
     refetchInterval: 30000,
   });
 
+  const { data: syncState, refetch: refetchSyncState } = useQuery({
+    queryKey: ['ai-sync-state'],
+    queryFn: () => aiApi.getSyncState(),
+    refetchInterval: (query) => query.state.data?.running ? 2000 : false,
+  });
+
+  const syncRunning = !!syncState?.running;
+
+  const { data: schedulerState } = useQuery({
+    queryKey: ['ai-scheduler'],
+    queryFn: () => aiApi.getScheduler(),
+  });
+
+  const schedulerMut = useMutation({
+    mutationFn: (enabled: boolean) => aiApi.setScheduler(enabled),
+    onSuccess: (_, enabled) => {
+      queryClient.setQueryData(['ai-scheduler'], { enabled });
+      message.success(enabled ? 'Автосинк включён' : 'Автосинк выключен');
+    },
+    onError: () => message.error('Не удалось изменить настройку автосинка'),
+  });
+
+  const syncMut = useMutation({
+    mutationFn: () => aiApi.sync() as Promise<any>,
+    onSuccess: async (data: any) => {
+      if (data?.already_running) {
+        message.info('Синхронизация уже запущена');
+      }
+      await refetchSyncState();
+    },
+    onError: () => message.error('Не удалось обновить каталог'),
+  });
+
+  const cancelSyncMut = useMutation({
+    mutationFn: () => aiApi.cancelSync(),
+    onSuccess: async () => {
+      message.info('Остановка синхронизации...');
+      await refetchSyncState();
+    },
+    onError: () => message.error('Не удалось остановить синхронизацию'),
+  });
+
+  // Refresh docs when sync finishes
+  const prevRunning = useRef<boolean>(false);
+  useEffect(() => {
+    if (prevRunning.current && !syncRunning) {
+      queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-activity-delta'] });
+      const res = syncState?.last_result;
+      if (res) {
+        const details = res.details || [];
+        const totalNew = details.reduce((s: number, d: any) => s + (d.new || 0), 0);
+        const totalArchived = details.reduce((s: number, d: any) => s + (d.archived || 0), 0);
+        if (totalNew > 0 || totalArchived > 0) setDelta({ new: totalNew, archived: totalArchived });
+        if (res.sources_synced != null) {
+          message.success(res.sources_synced > 0
+            ? `Каталог обновлён: ${res.sources_synced} источников`
+            : 'Обновлений не найдено');
+        }
+      }
+    }
+    prevRunning.current = !!syncRunning;
+  }, [syncRunning, syncState, queryClient]);
+
   const [delta, setDelta] = useState<{ new: number; archived: number } | null>(null);
 
   // Show delta from activity on first load
@@ -92,24 +156,6 @@ export default function AiDocumentsPage() {
       (d.docNumber || '').toLowerCase().includes(q)
     );
   };
-
-  const syncMut = useMutation({
-    mutationFn: () => aiApi.sync() as Promise<any>,
-    onSuccess: (data: any) => {
-      const details = data?.details || [];
-      const totalNew = details.reduce((s: number, d: any) => s + (d.new || 0), 0);
-      const totalArchived = details.reduce((s: number, d: any) => s + (d.archived || 0), 0);
-      if (totalNew > 0 || totalArchived > 0) {
-        setDelta({ new: totalNew, archived: totalArchived });
-      }
-      if (data?.sources_synced > 0) {
-        message.success(`Каталог обновлён: ${data.sources_synced} источников`);
-      }
-      aiApi.clearActivity();
-      queryClient.invalidateQueries({ queryKey: ['ai-docs'] });
-    },
-    onError: () => message.error('Не удалось обновить каталог'),
-  });
 
   const downloadMut = useMutation({
     mutationFn: () => aiApi.downloadAll(),
@@ -264,23 +310,28 @@ export default function AiDocumentsPage() {
 
   const columns = [
     {
-      title: 'Название документа', dataIndex: 'title', ellipsis: true,
+      title: 'Название документа', dataIndex: 'title', width: 420,
+      ellipsis: { showTitle: false } as any,
       render: (v: string, r: LegalDocumentResponse) => {
         const isArchived = r.status === 'ARCHIVED';
         const isAccessible = r.status === 'TRACKED' && !r.downloadState;
+        const fullTitle = (r.metadata && r.metadata.full_title) || v || r.originalFilename || '';
         const el = (
-          <span>
-            <span style={{ textDecoration: isArchived ? 'line-through' : 'none', color: isArchived ? '#999' : isAccessible ? '#999' : 'inherit' }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isArchived ? 'line-through' : 'none', color: isArchived ? '#999' : isAccessible ? '#999' : 'inherit' }}>
               {v || r.originalFilename || '—'}
-              {r.docNumber && <Tag style={{ marginLeft: 6 }}>{r.docNumber}</Tag>}
             </span>
+            {r.docNumber && <Tag style={{ marginLeft: 6, flexShrink: 0 }}>{r.docNumber}</Tag>}
           </span>
         );
+        const wrapped = fullTitle !== (v || r.originalFilename || '')
+          ? <Tooltip title={fullTitle} mouseEnterDelay={0.3}>{el}</Tooltip>
+          : el;
         if (r.filePath && r.downloadState === 'downloaded' && !isArchived) {
           const filename = r.originalFilename || r.filePath.split('/').pop();
-          return <a onClick={() => window.open(`/api/v1/ai/files/${filename}`, '_blank')} style={{ cursor: 'pointer' }}>{el}</a>;
+          return <a onClick={() => window.open(`/api/v1/ai/files/${filename}`, '_blank')} style={{ cursor: 'pointer' }}>{wrapped}</a>;
         }
-        return el;
+        return wrapped;
       },
     },
     {
@@ -444,11 +495,46 @@ export default function AiDocumentsPage() {
           onChange={e => setSearch(e.target.value)}
           style={{ maxWidth: 400 }}
         />
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {syncRunning && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 90 }}>
+                <Progress
+                  percent={syncState && syncState.total_sources > 0
+                    ? Math.round((syncState.done_sources / syncState.total_sources) * 100)
+                    : 0}
+                  size="small"
+                  showInfo={false}
+                />
+              </div>
+              <Tooltip title={`Источник: ${syncState?.current_source || '...'}`}>
+                <span style={{ fontSize: 12, color: '#8c8c8c', whiteSpace: 'nowrap', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <LoadingOutlined spin /> {syncState?.current_source || 'Синхронизация...'}
+                </span>
+              </Tooltip>
+            </div>
+          )}
           <Button icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>Загрузить файл</Button>
-          <Button icon={<ReloadOutlined spin={syncMut.isPending} />} loading={syncMut.isPending} onClick={() => syncMut.mutate()} style={{ width: 170 }}>
-            {syncMut.isPending ? 'Обновление...' : 'Обновить каталог'}
-          </Button>
+          <Tooltip title={schedulerState?.enabled ? 'Автосинк включён — планировщик проверяет источники по расписанию' : 'Автосинк выключен — синк только по кнопке «Обновить каталог»'}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+              <Switch
+                size="small"
+                checked={!!schedulerState?.enabled}
+                loading={schedulerMut.isPending}
+                onChange={(v) => schedulerMut.mutate(v)}
+              />
+              <span style={{ fontSize: 12, color: '#8c8c8c' }}>Автосинк</span>
+            </span>
+          </Tooltip>
+          {syncRunning ? (
+            <Button danger icon={<StopOutlined />} loading={cancelSyncMut.isPending} onClick={() => cancelSyncMut.mutate()} style={{ width: 170 }}>
+              Остановить
+            </Button>
+          ) : (
+            <Button icon={<ReloadOutlined />} onClick={() => syncMut.mutate()} style={{ width: 170 }}>
+              Обновить каталог
+            </Button>
+          )}
           {isDownloadSynced ? (
             <Button icon={<CheckCircleOutlined style={{ color: '#009f4d' }} />} disabled style={{ width: 170 }}>Синхронизировано</Button>
           ) : syncActive ? (

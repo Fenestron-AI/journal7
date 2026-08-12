@@ -128,6 +128,29 @@ class AiWorkerClient(
         return resp.bodyAsText()
     }
 
+    suspend fun getSyncState(): String {
+        val resp = client.get("$baseUrl/sync/state")
+        return resp.bodyAsText()
+    }
+
+    suspend fun cancelSync(): String {
+        val resp = client.post("$baseUrl/sync/cancel")
+        return resp.bodyAsText()
+    }
+
+    suspend fun getSchedulerState(): String {
+        val resp = client.get("$baseUrl/scheduler")
+        return resp.bodyAsText()
+    }
+
+    suspend fun setSchedulerState(payload: String): String {
+        val resp = client.post("$baseUrl/scheduler") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
     suspend fun getSources(): String {
         val resp = client.get("$baseUrl/sources")
         return resp.bodyAsText()
@@ -206,6 +229,14 @@ class AiWorkerClient(
         return resp.bodyAsText()
     }
 
+    suspend fun setDocumentUrl(docId: String, payload: String): String {
+        val resp = client.post("$baseUrl/documents/$docId/set-url") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
     suspend fun getActivity(): String {
         val resp = client.get("$baseUrl/activity")
         return resp.bodyAsText()
@@ -213,6 +244,95 @@ class AiWorkerClient(
 
     suspend fun clearActivity(): String {
         val resp = client.post("$baseUrl/activity/clear")
+        return resp.bodyAsText()
+    }
+
+    suspend fun forgetDocuments(payload: String): String {
+        val resp = client.post("$baseUrl/documents/forget") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
+    suspend fun unforgetDocuments(payload: String): String {
+        val resp = client.post("$baseUrl/documents/unforget") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
+    suspend fun setCategory(payload: String): String {
+        val resp = client.post("$baseUrl/documents/category") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
+    suspend fun getDiffs(): String {
+        val resp = client.get("$baseUrl/diffs")
+        return resp.bodyAsText()
+    }
+
+    suspend fun acknowledgeDiffs(payload: String): String {
+        val resp = client.post("$baseUrl/diffs/acknowledge") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
+    suspend fun listCatalogRules(): String {
+        val resp = client.get("$baseUrl/catalog-rules")
+        return resp.bodyAsText()
+    }
+
+    suspend fun createCatalogRule(payload: String): String {
+        val resp = client.post("$baseUrl/catalog-rules") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
+    suspend fun updateCatalogRule(ruleId: String, payload: String): String {
+        val resp = client.put("$baseUrl/catalog-rules/$ruleId") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
+    suspend fun deleteCatalogRule(ruleId: String): String {
+        val resp = client.delete("$baseUrl/catalog-rules/$ruleId")
+        return resp.bodyAsText()
+    }
+
+    suspend fun listFileSources(): String {
+        val resp = client.get("$baseUrl/file-sources")
+        return resp.bodyAsText()
+    }
+
+    suspend fun createFileSource(payload: String): String {
+        val resp = client.post("$baseUrl/file-sources") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
+    suspend fun updateFileSource(sourceId: String, payload: String): String {
+        val resp = client.put("$baseUrl/file-sources/$sourceId") {
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+        return resp.bodyAsText()
+    }
+
+    suspend fun deleteFileSource(sourceId: String): String {
+        val resp = client.delete("$baseUrl/file-sources/$sourceId")
         return resp.bodyAsText()
     }
 }

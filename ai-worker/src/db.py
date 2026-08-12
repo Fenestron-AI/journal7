@@ -102,7 +102,7 @@ def search(query_embedding: list[float], limit: int) -> list[dict]:
                 """
                 SELECT c.id, c.document_id, c.chunk_index, c.content,
                        1 - (c.embedding <=> %s::vector) AS score,
-                       d.title, d.doc_number
+                       d.title, d.doc_number, c.metadata
                 FROM ai.chunks c
                 JOIN ai.documents d ON d.id = c.document_id
                 WHERE c.embedding IS NOT NULL
@@ -117,6 +117,7 @@ def search(query_embedding: list[float], limit: int) -> list[dict]:
             {
                 "chunk_id": r[0], "document_id": str(r[1]), "chunk_index": r[2],
                 "content": r[3], "score": float(r[4]), "title": r[5], "doc_number": r[6],
+                "metadata": json.loads(r[7]) if r[7] else {},
             }
             for r in rows
         ]

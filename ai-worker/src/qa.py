@@ -35,7 +35,19 @@ def ask(question: str, history: list[dict] | None = None) -> dict:
         }
 
     # 4. Ask YandexGPT
+    has_formula = any(r.get("metadata", {}).get("contains_formula") for r in results)
     user_text = f"Контекст (нормативные документы):\n{context}\n\nВопрос: {question}"
+    if has_formula:
+        user_text = (
+            "Контекст содержит формулы в LaTeX-нотации ($$...$$).\n"
+            "ПРАВИЛА РАБОТЫ С ФОРМУЛАМИ:\n"
+            "1. Цитируй формулы ТОЧНО как в контексте, не упрощай и не переписывай.\n"
+            "2. НЕ выполняй расчёты по формулам — ты не калькулятор. Назови формулу и укажи,\n"
+            "   какие величины в неё подставляются и где она закреплена (пункт документа).\n"
+            "3. Если формула в контексте неполная или вызывает сомнение — так и скажи\n"
+            "   и посоветуй проверить по первоисточнику.\n\n"
+            f"{user_text}"
+        )
     answer = complete(SYSTEM_PROMPT, user_text)
 
     # 5. Sources

@@ -29,6 +29,9 @@ nohup bash -c 'cd frontend && exec npx vite --host 0.0.0.0 --port 5173' &>/tmp/f
 # AI Worker (uses setsid to survive shell timeouts)
 setsid bash -c 'cd ai-worker && exec env PYTHONPATH=src ./venv/bin/python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8000' </dev/null &>/tmp/ai-worker.log & disown
 
+# AI Scheduler (independent process, survives worker restarts)
+setsid bash -c 'cd ai-worker && exec env PYTHONPATH=src ./venv/bin/python3 -m scheduler' </dev/null &>/tmp/scheduler.log & disown
+
 echo ""
 echo "Waiting for backend (Kotlin compilation + start)..."
 for i in $(seq 1 60); do

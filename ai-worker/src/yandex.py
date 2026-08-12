@@ -39,15 +39,16 @@ def embed(text: str, query: bool = False) -> list[float]:
     return data["embedding"]
 
 
-def complete(system_prompt: str, user_text: str, model: str | None = None) -> str:
+def complete(system_prompt: str, user_text: str, model: str | None = None, max_tokens: int | None = None) -> str:
     """Call YandexGPT completion."""
     model_name = model or settings.yandex_llm_model
+    token_limit = max_tokens or settings.yandex_llm_max_tokens
     payload = {
         "modelUri": f"gpt://{settings.yandex_folder_id}/{model_name}",
         "completionOptions": {
             "stream": False,
             "temperature": settings.yandex_llm_temperature,
-            "maxTokens": settings.yandex_llm_max_tokens,
+            "maxTokens": token_limit,
         },
         "messages": [
             {"role": "system", "text": system_prompt},

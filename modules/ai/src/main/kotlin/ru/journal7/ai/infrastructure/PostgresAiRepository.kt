@@ -24,6 +24,7 @@ object AiDocumentsTable : Table("ai.documents") {
     val processingState = text("processing_state").nullable()
     val priority = varchar("priority", 16).default("normal")
     val pinned = bool("pinned").default(false)
+    val forgotten = bool("forgotten").default(false)
     val filePath = text("file_path").nullable()
     val fileHash = text("file_hash").nullable()
     val chunkCount = integer("chunk_count").default(0)
@@ -70,7 +71,7 @@ class PostgresAiRepository : AiRepository {
     }
 
     override suspend fun listDocuments(status: String?): List<LegalDocument> = transaction {
-        var q = AiDocumentsTable.selectAll()
+        var q = AiDocumentsTable.selectAll().where { AiDocumentsTable.forgotten eq false }
         if (status != null) q = q.where { AiDocumentsTable.status eq status }
         q.orderBy(AiDocumentsTable.createdAt to SortOrder.DESC)
             .map { it.toDocument() }

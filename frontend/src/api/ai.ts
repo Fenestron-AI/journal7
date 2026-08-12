@@ -46,6 +46,29 @@ export interface SyncResponse {
   details?: SyncDetail[];
 }
 
+export interface SyncStateResponse {
+  running: boolean;
+  cancelled: boolean;
+  current_source: string | null;
+  done_sources: number;
+  total_sources: number;
+  started_at: number | null;
+  last_result: SyncResponse | null;
+}
+
+export interface SyncDiffDoc {
+  title: string;
+  doc_number?: string;
+}
+
+export interface SyncDiff {
+  id: string;
+  sourceName: string;
+  newDocs: SyncDiffDoc[];
+  archivedDocs: SyncDiffDoc[];
+  createdAt: number;
+}
+
 export interface SyncDetail {
   name: string;
   url: string;
@@ -83,6 +106,18 @@ export const aiApi = {
     api.get<LegalDocumentResponse>(`/ai/documents/${id}`).then(r => r.data),
   deleteDocument: (id: string) =>
     api.delete(`/ai/documents/${id}`),
+  setDocumentUrl: (id: string, url: string) =>
+    api.post(`/ai/documents/${id}/set-url`, { url }).then(r => r.data),
+  forgetDocuments: (ids: string[]) =>
+    api.post('/ai/documents/forget', { ids }).then(r => r.data),
+  unforgetDocuments: (ids: string[]) =>
+    api.post('/ai/documents/unforget', { ids }).then(r => r.data),
+  setCategory: (ids: string[], category: string) =>
+    api.post('/ai/documents/category', { ids, category }).then(r => r.data),
+  getDiffs: () =>
+    api.get<SyncDiff[]>('/ai/diffs').then(r => r.data),
+  acknowledgeDiffs: (ids: string[] = []) =>
+    api.post('/ai/diffs/acknowledge', { ids }).then(r => r.data),
   startIngest: (id: string) =>
     api.post(`/ai/documents/${id}/ingest`).then(r => r.data),
   cancelIngest: (id: string) =>
@@ -91,6 +126,14 @@ export const aiApi = {
     api.post('/ai/download').then(r => r.data),
   sync: () =>
     api.post('/ai/sync').then(r => r.data),
+  getScheduler: () =>
+    api.get<{ enabled: boolean }>('/ai/scheduler').then(r => r.data),
+  setScheduler: (enabled: boolean) =>
+    api.post<{ enabled: boolean }>('/ai/scheduler', { enabled }).then(r => r.data),
+  getSyncState: () =>
+    api.get<SyncStateResponse>('/ai/sync/state').then(r => r.data),
+  cancelSync: () =>
+    api.post('/ai/sync/cancel').then(r => r.data),
   pauseSync: () =>
     api.post('/ai/sync/pause').then(r => r.data),
   resumeSync: () =>

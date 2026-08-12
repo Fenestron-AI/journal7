@@ -52,6 +52,12 @@ fun Route.aiRoutes() {
             call.respondText(resp, ContentType.Application.Json)
         }
 
+        post("documents/{id}/set-url") {
+            val payload = call.receiveText()
+            val id = call.parameters["id"]!!
+            call.respondText(workerClient.setDocumentUrl(id, payload), ContentType.Application.Json)
+        }
+
         get("activity") {
             val json = workerClient.getActivity()
             call.respondText(json, ContentType.Application.Json)
@@ -62,8 +68,91 @@ fun Route.aiRoutes() {
             call.respondText(json, ContentType.Application.Json)
         }
 
+        post("documents/forget") {
+            val payload = call.receiveText()
+            call.respondText(workerClient.forgetDocuments(payload), ContentType.Application.Json)
+        }
+
+        post("documents/unforget") {
+            val payload = call.receiveText()
+            call.respondText(workerClient.unforgetDocuments(payload), ContentType.Application.Json)
+        }
+
+        post("documents/category") {
+            val payload = call.receiveText()
+            call.respondText(workerClient.setCategory(payload), ContentType.Application.Json)
+        }
+
+        get("diffs") {
+            call.respondText(workerClient.getDiffs(), ContentType.Application.Json)
+        }
+
+        post("diffs/acknowledge") {
+            val payload = call.receiveText()
+            call.respondText(workerClient.acknowledgeDiffs(payload), ContentType.Application.Json)
+        }
+
+        get("catalog-rules") {
+            call.respondText(workerClient.listCatalogRules(), ContentType.Application.Json)
+        }
+
+        post("catalog-rules") {
+            val payload = call.receiveText()
+            call.respondText(workerClient.createCatalogRule(payload), ContentType.Application.Json)
+        }
+
+        put("catalog-rules/{id}") {
+            val payload = call.receiveText()
+            val id = call.parameters["id"]!!
+            call.respondText(workerClient.updateCatalogRule(id, payload), ContentType.Application.Json)
+        }
+
+        delete("catalog-rules/{id}") {
+            val id = call.parameters["id"]!!
+            call.respondText(workerClient.deleteCatalogRule(id), ContentType.Application.Json)
+        }
+
+        get("file-sources") {
+            call.respondText(workerClient.listFileSources(), ContentType.Application.Json)
+        }
+
+        post("file-sources") {
+            val payload = call.receiveText()
+            call.respondText(workerClient.createFileSource(payload), ContentType.Application.Json)
+        }
+
+        put("file-sources/{id}") {
+            val payload = call.receiveText()
+            val id = call.parameters["id"]!!
+            call.respondText(workerClient.updateFileSource(id, payload), ContentType.Application.Json)
+        }
+
+        delete("file-sources/{id}") {
+            val id = call.parameters["id"]!!
+            call.respondText(workerClient.deleteFileSource(id), ContentType.Application.Json)
+        }
+
         get("sync/status") {
             call.respond(mapOf("paused" to workerClient.downloadStatus()))
+        }
+
+        get("sync/state") {
+            val json = workerClient.getSyncState()
+            call.respondText(json, ContentType.Application.Json)
+        }
+
+        post("sync/cancel") {
+            val json = workerClient.cancelSync()
+            call.respondText(json, ContentType.Application.Json)
+        }
+
+        get("scheduler") {
+            call.respondText(workerClient.getSchedulerState(), ContentType.Application.Json)
+        }
+
+        post("scheduler") {
+            val payload = call.receiveText()
+            call.respondText(workerClient.setSchedulerState(payload), ContentType.Application.Json)
         }
 
         // --- Sources ---

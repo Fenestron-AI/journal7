@@ -58,6 +58,22 @@ def is_paused():
     return not _paused.is_set()
 
 
+def _unique_path(outdir: Path, filename: str) -> Path:
+    """Return a path that doesn't collide with an existing file.
+    Duplicates get a numeric suffix: name-2.pdf, name-3.pdf..."""
+    dest = outdir / filename
+    if not dest.exists():
+        return dest
+    stem = Path(filename).stem
+    suffix = Path(filename).suffix
+    i = 2
+    while True:
+        candidate = outdir / f"{stem}-{i}{suffix}"
+        if not candidate.exists():
+            return candidate
+        i += 1
+
+
 def _reset_stuck():
     conn = _connect()
     cur = conn.cursor()
@@ -209,7 +225,7 @@ def download_all():
         outdir = root / source
         outdir.mkdir(parents=True, exist_ok=True)
         filename = url.rsplit('/', 1)[-1] if '/' in url else f"{doc_num}.pdf"
-        dest = outdir / filename
+        dest = _unique_path(outdir, filename)
         set_document_status(doc_id, "TRACKED", download_state="downloading")
         q.put((doc_id, doc_num, url, filename, dest, source))
 

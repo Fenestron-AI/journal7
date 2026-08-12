@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     yandex_sync_model: str = "yandexgpt-lite/latest"
     yandex_llm_temperature: float = 0.1
     yandex_llm_max_tokens: int = 2000
+    yandex_sync_max_tokens: int = 8000
 
     # --- Ingestion ---
     chunk_size: int = 1500      # символов на чанк
@@ -26,6 +27,12 @@ class Settings(BaseSettings):
     # --- Vector search ---
     top_k: int = 6
     similarity_threshold: float = 0.35
+
+    # --- Formula OCR (pix2text server) ---
+    formula_ocr_url: str = "http://localhost:8001"
+
+    # --- Scheduler (off by default; syncs only on manual button) ---
+    enable_scheduler: bool = False
 
 
 settings = Settings()
