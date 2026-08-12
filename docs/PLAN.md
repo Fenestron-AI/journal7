@@ -32,6 +32,10 @@
 | 15 | **Формулы**: pix2text (бесплатный, локальный, ONNX) — MFD-детекция + MFR→LaTeX. Текст — pypdf/python-docx (OCR текста не используем). Обучение — локально (GPU), на хостинге CPU-фон (10с/стр приемлемо) | 2026-08-11 |
 | 16 | **Агент не считает**: цитирует формулы из чанков (LaTeX), не пересчитывает; расчёты — движок Kotlin; при сомнении — «проверьте по первоисточнику, п. X» | 2026-08-11 |
 | 17 | **Пилот OCR (11.08)**: pix2text 1.1.6 + CUDA, ПП 442 (588 формул MathType). Формулы распознаются структурно верно (Sрозн_ген, W_KГО: Σ, min/max, дроби, индексы). Скорость: GPU ~8с/стр, CPU ~10с/стр | 2026-08-11 |
+| 18 | **Хостинг — один сервер, docker-compose** (единственная точка управления); K8s избыточен | 2026-08-12 |
+| 19 | **Образы собираются на сервере** (docker layer cache), не через registry — ML-образ ~6–11GB | 2026-08-12 |
+| 20 | **CPU-профиль воркера: torch CPU-only** (без CUDA-стеков, ONNX-бэкенд); GPU-профиль: CUDA-torch + onnxruntime-gpu | 2026-08-12 |
+| 21 | **Обновления: git pull → docker compose up -d --build**; миграции Flyway — автоматически при старте backend | 2026-08-12 |
 
 ## Состав нормативно-правовой базы (шаг 1, утверждён)
 
@@ -98,6 +102,25 @@
 
 ---
 
+## Целевая архитектура (хостинг)
+
+Один сервер, docker-compose — единственная точка управления (K8s избыточен).
+
+```
+nginx (TLS, journal7.ru, Let's Encrypt)  ← единственная точка входа
+ ├─ / → frontend (статический build React)
+ └─ /api → backend (Ktor fat-jar, :8080)
+backend ──AI_WORKER_URL (env)──▶ worker :8000
+worker :8000 = FastAPI + p2t :8001 (формулы) + LibreOffice + poppler + модели
+scheduler — процесс в worker-контейнере (ENABLE_SCHEDULER)
+postgres (pgvector), redis, minio — инфраструктура
+```
+
+Текущее состояние (dev, 2026-08-12): в контейнерах — postgres/redis/minio/worker;
+нативные процессы — backend (Ktor :8080), frontend (Vite :5173), scheduler (выключен).
+
+---
+
 ## План по фазам
 
 ### Шаг 1 — Состав НПБ ✅ (утверждён 2026-08-11)
@@ -156,6 +179,17 @@
 - [x] Docker: `Dockerfile` воркера = worker + pix2text + LibreOffice + poppler (один контейнер), бейк моделей `bake_models.py`, entrypoint поднимает p2t serve на :8001; профиль `gpu` (onnxruntime-gpu + nvidia) в docker-compose
 - [x] DOCX/RTF: извлечение формул — oMath→LaTeX напрямую (без OCR) + WMF/EMF-картинки → soffice → PNG → p2t (MFR), вставка в позицию; RTF: `{\pict\wmetafile8}`. Модуль `ai-worker/src/docx_math.py`
 
+### Шаг 7 — Хостинг: контейнеризация и обвязка
+- [ ] torch CPU-only для CPU-образа (11.4GB → ~6.5GB)
+- [ ] `AI_WORKER_URL` в env — убрать hardcode `localhost:8000` из AiWorkerClient
+- [ ] Scheduler — 3-й процесс в entrypoint worker-контейнера
+- [ ] Dockerfile backend (Kotlin fat-jar)
+- [ ] Dockerfile frontend (vite build → nginx-статика)
+- [ ] nginx reverse proxy + TLS (Let's Encrypt, journal7.ru)
+- [ ] Бэкапы: pg_dump по cron + файлы документов
+- [ ] CI: GitHub Actions (compile + test + сборка образов)
+- [ ] deploy.sh: git pull → compose build → up -d
+
 ---
 
 ## Статус / история
@@ -174,3 +208,6 @@
 | 2026-08-11 | Шаг 4 реализован (кроме UI): V12 catalog_rules, применение правил в синке, переоценка старых, API CRUD, 19 правил по категориям A–E |
 | 2026-08-11 | Шаг 2 завершён: каталог 77 документов (законы/ПП/приказы), allowlist из утверждённого состава, scheduler с флагом ENABLE_SCHEDULER, переключатель в UI, ретраи+таймауты, ручной URL (set-url), np-sr доступен без VPN |
 | 2026-08-11 | Сессия завершена: backend+frontend+worker запущены, p2t serve на :8001, UI :5173 — страница НПБ с переключателем автосинка |
+| 2026-08-12 | DOCX/RTF-формулы: oMath→LaTeX без OCR + WMF/EMF→soffice→p2t; модуль docx_math.py |
+| 2026-08-12 | Worker в одном контейнере: FastAPI + pix2text + LibreOffice + poppler, бейк моделей, gpu-профиль; smoke-тест формул в контейнере пройден |
+| 2026-08-12 | Утверждена целевая архитектура хостинга: один сервер, docker-compose; решения 18–21; открыт Шаг 7 |
